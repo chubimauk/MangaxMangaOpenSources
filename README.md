@@ -7,6 +7,8 @@ Sources Set Up For Manga x Manga
 3. search across multiple sources will only work with whatever sources you have available in your app
 4. anilist is the only "source" included in the app without manually adding sources and is search only obviously
 
+**FOR DEVELOPERS**
+
 **Live Testing Sources on MacOS**
 *if you have the app running on MacOS you can test your newsource without bundling it at all and without restarting the app usually*
 To do so:
@@ -33,3 +35,7 @@ a lot of the naming of the source.js base class is largely a mirror of Tachiyomi
 7. rename the bundle.js file to "newsourcename.js" and place this in /sources in the Files App Folder for MxM (this would be inside the Documents folder for MxM on MacOS)
 8. rerun the app and your source should be selectable, if the app crashes you 100% have an error in your code, delete the file from the Files App for the app to run and take a look at your code
 
+Notes:
+-you should only have one source you are adding at a time in /src, feel free to rename manganelo.js and edit it's code as a base for your new source
+-if you are sufficiently satisfied with your source and would like it to be added to the official sources bundle for the app feel free to message me on the discord: https://discord.gg/x8PhyEz, I will need your newsourcename.js file from the  /src folder, the final bundled version wouldn't hurt for testing it out quickly on my end either
+-if you have any suggestions on how to streamline the process, add some automated testing (please), fee free to message me on the discord again^^

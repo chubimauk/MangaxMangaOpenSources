@@ -1,0 +1,32 @@
+h1, p, div {
+  text-align: center;
+}
+html {
+  background: #fffffe;
+}
+pre {
+ outline: 1px solid #ccc;
+  padding: 5px;
+  margin: 5px;
+  overflow:scroll;
+  text-align:left;
+  width   : 1100px;
+  height  : 200px;   
+  position: relative;
+  z-index : 1;
+}
+.string {
+  color: green;
+}
+.number {
+  color: darkorange;
+}
+.boolean {
+  color: blue;
+}
+.null {
+  color: gray;
+}
+.key {
+  color: red;
+}

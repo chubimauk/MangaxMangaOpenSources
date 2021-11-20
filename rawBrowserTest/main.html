@@ -1,0 +1,79 @@
+<!-- index.html -->
+<!doctype html>
+<html>
+  <head>
+    <title>MXM Source Testing</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <div class="container">
+      <h2>Welcome to the Client Side of MangaxManga Source Testing</h2>
+      <div class="well">
+        <h2> Source File Request </h2>
+        <h2>Each time you update your source file refressh the page and change the version of the app so you can see the changes or just close the exe and reopen it</h2>
+        <form id="form"> 
+          <input type="file" id="sourcefile">
+          <input type="text" id="name" placeholder="Name">
+          <input type="text" id="version" placeholder="Version">
+          <input type="text" id="filenames" placeholder="File Name">
+          <button type="button" onclick="submitsource()">Sumbit File</button>
+        </form>
+      </div>
+      <div class="well">
+        <p><h2> Source Latest Manga </h2></p>
+        <form id="form"> 
+          <input type="search" id="latestchaps" placeholder="Page Number">
+          <button type="button" onclick="getlatestchaps()">Sumbit</button>
+        </form>
+      </div>
+      <div class="well">
+        <pre id="latestchapste"></pre>
+      </div>
+      <div class="well">
+        <p><h2> Source Popular Manga </h2></p>
+        <form id="form"> 
+          <input type="search" id="popularchaps" placeholder="Page Number">
+          <button type="button" onclick="getpopularchaps()">Sumbit</button>
+        </form>
+      </div>
+      <div class="well">
+        <pre id="popularchapste"></pre>
+      </div>
+      <div class="well">
+        <p><h2> Source Search Manga </h2></p>
+        <form id="form">
+          <input type="search" id="searchmangsname" placeholder="Series Name">
+          <input type="search" id="searchmangsnum" placeholder="Page Number">
+          <button type="button" onclick="getsearchmanga()">Sumbit</button>
+        </form>
+      </div>
+      <div class="well">
+        <pre id="searchmangste"></pre>
+      </div>
+      <div class="well">
+        <p><h2> Source Series Info Manga </h2></p>
+        <form id="form">
+          <input type="search" id="getseries" placeholder="Series Link">
+          <button type="button" onclick="getserieslink()">Sumbit</button>
+        </form>
+      </div>
+      <div class="well">
+        <pre id="seriesinfo"></pre>
+      </div>
+      <div class="well">
+        <p><h2> Source Series Page Info Manga </h2></p>
+        <form id="form">
+          <input type="search" id="getseriespages" placeholder="Series Link">
+          <input type="search" id="getseriespageslink" placeholder="Chapter Link">
+          <input type="search" id="getseriespagesnum" placeholder="Chapter Number">
+          <button type="button" onclick="getseriespage()">Sumbit</button>
+        </form>
+      </div>
+      <div class="well">
+        <pre id="seriesinfopages"></pre>
+      </div>
+    </div>
+    <script src="main.js"></script>
+  </body>
+</html>

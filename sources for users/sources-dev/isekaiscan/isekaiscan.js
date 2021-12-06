@@ -129,12 +129,70 @@ module.exports = class Isekaiscan extends Source  {
         
         var chapterAElement = $('a');
         var url = super.substringAfterFirst(this.baseUrl, chapterAElement.attr('href'));
-        var nam = chapterAElement.text().trim();
-        var name = nam.charAt(0).toUpperCase() + nam.slice(1);
+        var name = chapterAElement.text().trim();
         var scanlator = "";
         var date_upload = $('span').last().text().trim();
         var volumeNumber = '';
         var chapterNumber = '';
+        const regex = RegExp(/\b\d+\.?\d?\b/g);
+        if (name != null){
+            var numbers = name.match(regex);
+            //console.log(`title numbers -- , ${numbers}, name -- , ${name}`);
+            if (numbers != null){
+                if(numbers.length > 0){
+                    var indexOfFirstNumber = name.indexOf(numbers[0]);
+                    var indexOfCh = name.indexOf('Ch');
+                    var indexOfAllLittleCH = name.indexOf('ch');
+                    var indexOfAllCapCH = name.indexOf('CH');
+                    console.log("index of first number -- ", indexOfFirstNumber);
+                    if (indexOfFirstNumber > indexOfCh && indexOfCh > -1){
+                        chapterNumber = numbers[0];
+                    }
+                    else if (indexOfFirstNumber > indexOfAllLittleCH && indexOfAllLittleCH > -1){
+                        chapterNumber = numbers[0];
+                    }
+                    else if (indexOfFirstNumber > indexOfAllCapCH && indexOfAllCapCH > -1){
+                        chapterNumber = numbers[0];
+                    }
+                    else {
+                        //have not set the chapter number yet from the first number
+                        if(numbers.length > 1){
+                            if((name.startsWith('v') || name.startsWith('V'))){
+                                //first number is volume
+                                volumeNumber = numbers[0];
+                                chapterNumber = numbers[1];
+                            }
+                            else {
+                                //probably never happen but, in the case where first number is not after chapter and we don't start with v, just use the first number as chapter
+                                chapterNumber = numbers[0];
+                                //second number is useless
+                            }
+                        }
+                        else {
+                            //if there's only one number, just assume it is the chapter
+                            chapterNumber = numbers[0];
+                        }
+                    }
+                    
+                    //check if possibly Volume is listed after chapter (very rare e.g. Chapter 108.5: Volume 12 Omake -- Boku No Hero Academia)
+                    if(chapterNumber != '' && numbers.length > 1 && volumeNumber == ''){
+                        //chapter set, volume not set and we have one more number
+                        if (name.includes('volume') || name.includes('Volume')){
+                            //fuck it just use the second number as the volume then
+                            volumeNumber = numbers[1];
+                        }
+                    }
+                }
+                else {
+                    chapterNumber = "?"; //no numbers at all
+                }
+            }
+            else {
+                chapterNumber = "?";
+            }
+        } else {
+            chapterNumber = "?"; //no name, no chapter
+        }
         return super.chapter(url, "English", volumeNumber, chapterNumber, name, date_upload, scanlator);
     }
     

@@ -239,7 +239,9 @@ module.exports = class Isekaiscan extends Source  {
         let author = $('div.author-content > a').text();
         let artist = $('div.artist-content > a').text();
         let status = $('div.post-status div.summary-content').text().toUpperCase().trim();
-
+        if(status.includes("\nONGOING") || status.includes("\nCOMPLETED") || status.includes("\nCANCELED") || status.includes("\nOn Hiatus")){
+            status = this.substringAfterLast("\n",status)
+        }
         var genres = [];
         if (typeof thumbnai === undefined){
             thumbnai = $('div.summary_image img').attr('src');

@@ -238,9 +238,9 @@ module.exports = class ToonilyCom extends Source  {
         let thumbnai = $('div.summary_image img').attr('data-src');
         let table = $('div.summary_content');
         let author = $('div.author-content > a').text();
-        let artist = $('div.artist-content > a').text();
+        let artist = $('div.artist-content > a').text();  
         let status = $('div.post-status div.summary-content').text().toUpperCase().trim();
-        if(status.includes("\nONGOING") || status.includes("\nCOMPLETED")){
+        if(status.includes("\nONGOING") || status.includes("\nCOMPLETED") || status.includes("\nCANCELED") || status.includes("\nOn Hiatus")){  // Canceled
             status = this.substringAfterLast("\n",status)
         }
         var genres = [];

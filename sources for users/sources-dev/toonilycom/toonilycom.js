@@ -5,7 +5,7 @@ var rp = require('request-promise');
 var cheerio = require('cheerio');
 
 
-module.exports = class toonilycom extends Source  {
+module.exports = class ToonilyCom extends Source  {
 
     constructor() {
         super();
@@ -226,7 +226,7 @@ module.exports = class toonilycom extends Source  {
             headers['Content-Type'] = 'image/jpeg';
             pages.push(thisReference.jsonBrowserifyRequest(url,null,null,headers,null));
         });
-        console.log('toonilycom pages', pages);
+        console.log('ToonilyCom pages', pages);
         return pages;
     }
     
@@ -254,7 +254,7 @@ module.exports = class toonilycom extends Source  {
 
     
     async fetchLatestManga(page){
-        console.log("fetchLatestManga -- toonilycom");
+        console.log("fetchLatestManga -- ToonilyCom");
         var page = parseInt(page);
         
         var currentPageHtml = await this.send_request(this.latestUpdatesRequest(`${page}`));
@@ -268,12 +268,12 @@ module.exports = class toonilycom extends Source  {
 
         var json = [];
         $(latestUpdatesSelector).each(function (i, elem) {
-            var mangaUpdate = new toonilycom().latestUpdatesFromElement($(this));
+            var mangaUpdate = new ToonilyCom().latestUpdatesFromElement($(this));
             mangaUpdate.updates = 1;
             json.push(mangaUpdate);
         });
         
-        console.log("toonilycom latest -- ", json);
+        console.log("ToonilyCom latest -- ", json);
         
         var mangasPage = {};
         mangasPage.mangas = json;
@@ -333,17 +333,17 @@ module.exports = class toonilycom extends Source  {
         
         sourceInfo.filters = filters;
         
-        console.log("toonilycom sourceInfo -- ", sourceInfo);
+        console.log("ToonilyCom sourceInfo -- ", sourceInfo);
         return sourceInfo;
     }
     
     searchMangaRequest(page, query, filters) {
-        console.log("toonilycom filters -- ", filters);
+        console.log("ToonilyCom filters -- ", filters);
         var query = query = query.replace(/_/g,"+");
         if (Object.keys(filters).length === 0) {
             console.log("filters are empty");
             var url = this.getRequestWithHeaders("GET",this.baseUrl + `/page/${page}?s=` + this.normalizeSearchQuery(query) + `&post_type=wp-manga`);
-            console.log("attempting to fetch search request for toonilycom - searchUrl is ", url);
+            console.log("attempting to fetch search request for ToonilyCom - searchUrl is ", url);
             return url;
         }
         else {
@@ -375,7 +375,7 @@ module.exports = class toonilycom extends Source  {
             }
             let finsihedur = this.getRequestWithHeaders("GET",url);
 
-            console.log("attempting to fetch search request for toonilycom - searchUrl is ", url);
+            console.log("attempting to fetch search request for ToonilyCom - searchUrl is ", url);
             return finsihedur;
         }
     }
@@ -403,7 +403,7 @@ module.exports = class toonilycom extends Source  {
         
         var $ = cheerio.load(response);
         $(searchMangaSelector).each(function (i, elem) {
-            json.push(new toonilycom().searchMangaFromElement($(this)));
+            json.push(new ToonilyCom().searchMangaFromElement($(this)));
         });
         
         var page = parseInt(page);

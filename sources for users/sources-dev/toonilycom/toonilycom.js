@@ -236,16 +236,18 @@ module.exports = class ToonilyCom extends Source  {
         console.log("mangaDetailsParse loaded into cheerio");
         let title = $('div.post-title h1').text().trim();
         let thumbnai = $('div.summary_image img').attr('data-src');
-        let table = $('div.summary_content');
-        let author = $('div.author-content > a').text();
-        let artist = $('div.artist-content > a').text();
+        let author = $('div.author-content').text().trim();
+        let artist = $('div.artist-content').text().trim();
         let status = $('div.post-status div.summary-content').text().toUpperCase().trim();
-        if(status.includes("\nONGOING") || status.includes("\nCOMPLETED") || status.includes("\nCANCELED") || status.includes("\nOn Hiatus")){
-            status = this.substringAfterLast("\n",status)
-        }
         var genres = [];
         if (typeof thumbnai === undefined){
             thumbnai = $('div.summary_image img').attr('src');
+        }
+        if(status.includes("\nONGOING") || status.includes("\nCOMPLETED") || status.includes("\nCANCELED") || status.includes("\nON HIATUS")){
+            status = this.substringAfterLast("\n",status)
+        }
+        if(title.includes("\n")){
+            title = this.substringAfterLast("\n",title)
         }
         var thumbnail =  thumbnai + '?'
         $('div.genres-content a').each(function (i, chapterElement){

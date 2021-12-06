@@ -117,10 +117,10 @@ module.exports = class Isekaiscan extends Source  {
     
     mangaDetailsRequest(seriesURL) {
         if(seriesURL.startsWith('http')){
-            return this.getRequestWithHeaders('GET',seriesURL);
+            return this.getRequestWithHeaders('GET',seriesURL + "ajax/chapters/");
         }
         else {
-            return this.getRequestWithHeaders('GET',super.mangaDetailsRequest(seriesURL));
+            return this.getRequestWithHeaders('GET',super.mangaDetailsRequest(seriesURL + "ajax/chapters/"));
         }
     }
     

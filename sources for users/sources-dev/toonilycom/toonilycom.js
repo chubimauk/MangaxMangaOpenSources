@@ -25,7 +25,11 @@ module.exports = class ToonilyCom extends Source  {
                   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
                   'Accept-Language': 'en-us',
                   'Connection': 'keep-alive',
+                  'X-Requested-With': 'XMLHttpRequest',
                 },
+                agentOptions: {
+                    ciphers: 'AES256-SHA'
+                  }
               };
         return options;
     }
@@ -126,13 +130,60 @@ module.exports = class ToonilyCom extends Source  {
         
         var chapterAElement = $('a');
         var url = super.substringAfterFirst(this.baseUrl, chapterAElement.attr('href'));
-        var nam = chapterAElement.text().trim();
-        var name = nam.charAt(0).toUpperCase() + nam.slice(1);
+        var name = chapterAElement.text().trim();
         var scanlator = "";
         var date_upload = $('span').last().text().trim();
-
         var volumeNumber = '';
         var chapterNumber = '';
+        const regex = RegExp(/\b\d+\.?\d?\b/g);
+        if (name != null){
+            var numbers = name.match(regex);
+            if (numbers != null){
+                if(numbers.length > 0){
+                    var indexOfFirstNumber = name.indexOf(numbers[0]);
+                    var indexOfCh = name.indexOf('Ch');
+                    var indexOfAllLittleCH = name.indexOf('ch');
+                    var indexOfAllCapCH = name.indexOf('CH');
+                    console.log("index of first number -- ", indexOfFirstNumber);
+                    if (indexOfFirstNumber > indexOfCh && indexOfCh > -1){
+                        chapterNumber = numbers[0];
+                    }
+                    else if (indexOfFirstNumber > indexOfAllLittleCH && indexOfAllLittleCH > -1){
+                        chapterNumber = numbers[0];
+                    }
+                    else if (indexOfFirstNumber > indexOfAllCapCH && indexOfAllCapCH > -1){
+                        chapterNumber = numbers[0];
+                    }
+                    else {
+                        if(numbers.length > 1){
+                            if((name.startsWith('v') || name.startsWith('V'))){
+                                volumeNumber = numbers[0];
+                                chapterNumber = numbers[1];
+                            }
+                            else {
+                                chapterNumber = numbers[0];
+                            }
+                        }
+                        else {
+                            chapterNumber = numbers[0];
+                        }
+                    }
+                    if(chapterNumber != '' && numbers.length > 1 && volumeNumber == ''){
+                        if (name.includes('volume') || name.includes('Volume')){
+                            volumeNumber = numbers[1];
+                        }
+                    }
+                }
+                else {
+                    chapterNumber = "?";
+                }
+            }
+            else {
+                chapterNumber = "?";
+            }
+        } else {
+            chapterNumber = "?";
+        }
         return super.chapter(url, "English", volumeNumber, chapterNumber, name, date_upload, scanlator);
     }
     
@@ -174,16 +225,18 @@ module.exports = class ToonilyCom extends Source  {
         console.log("mangaDetailsParse loaded into cheerio");
         let title = $('div.post-title h1').text().trim();
         let thumbnai = $('div.summary_image img').attr('data-src');
-        let table = $('div.summary_content');
-        let author = $('div.author-content > a').text();
-        let artist = $('div.artist-content > a').text();
+        let author = $('div.author-content').text().trim();
+        let artist = $('div.artist-content').text().trim();
         let status = $('div.post-status div.summary-content').text().toUpperCase().trim();
-        if(status.includes("\nONGOING") || status.includes("\nCOMPLETED")){
-            status = this.substringAfterLast("\n",status)
-        }
         var genres = [];
         if (typeof thumbnai === undefined){
             thumbnai = $('div.summary_image img').attr('src');
+        }
+        if(status.includes("\nONGOING") || status.includes("\nCOMPLETED") || status.includes("\nCANCELED") || status.includes("\nON HIATUS")){
+            status = this.substringAfterLast("\n",status)
+        }
+        if(title.includes("\n")){
+            title = this.substringAfterLast("\n",title)
         }
         var thumbnail =  thumbnai + '?'
         $('div.genres-content a').each(function (i, chapterElement){

@@ -177,6 +177,17 @@ module.exports = class Mangaworld extends Source  {
         let author = $(`div.comic-info a[href^="${this.baseUrl}/archive?author="]`).text().trim();
         let artist = $(`div.comic-info a[href^="${this.baseUrl}/archive?artist="]`).text().trim();
         let status = $(`div.comic-info a[href^="${this.baseUrl}/archive?status="]`).text().toUpperCase().trim();
+        if(status.includes("IN CORSO")){
+            status = "ONGOING"
+        }else if(status.includes("FINITO")){
+            status = "COMPLETED"
+        }else if(status.includes("DROPPATO")){
+            status = "DROPPED"
+        }else if(status.includes("IN PAUSA")){
+            status = "ON HOLD"
+        }else if(status.includes("CANCELLATO")){
+            status = "CANCELED"
+        }
         var genres = [];
         var thumbnail =  thumbnai + '?'
         $('div.comic-info div.meta-data a.badge').each(function (i, chapterElement){

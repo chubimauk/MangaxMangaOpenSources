@@ -233,15 +233,11 @@ module.exports = class Zahard extends Source  {
         console.log("mangaDetailsParse loaded into cheerio");
         let title = $('h2.listmanga-header, h2.widget-title').first().text().trim();
         let thumbnai = this.coverGuess($('.row [class^=img-responsive]').attr('src'),seriesURL)
-        let author = ""
-        let artist = ""
-        let status = $(`.col-sm-8 .dl-horizontal .label`).text().toUpperCase().trim();
-        var genres = [];
+        let author = $(".col-sm-8 dt:contains('Author(s)')").next().text().trim()
+        let artist = $(".col-sm-8 dt:contains('Artist(s)')").next().text().trim()
+        let status = $(`.col-sm-8 dt:contains('Status')`).next().text().toUpperCase().trim();
+        var genres = $('.col-sm-8 dt:contains("Categories")').next().text().trim().replace(/\n/g,'').replace(/\s/g, '').split(/,/g)
         var thumbnail =  thumbnai + '?'
-        $('.col-sm-8 .dl-horizontal a[href]').each(function (i, chapterElement){
-            var gen = $(chapterElement).text();
-            genres.push(gen);
-        });
         let description = $('.row .well p').text().trim();
         console.log('finishedMangaDetails parse');
         return this.mangaDetails(title, thumbnail, description, author, artist, status, genres);

@@ -324,7 +324,7 @@ module.exports = class Zahard extends Source  {
             json.push(mangaUpdate);
         });
         
-        console.log("mangenlo latest -- ", json);
+        console.log("Onma latest -- ", json);
         
         var mangasPage = {};
         mangasPage.mangas = json;

@@ -378,6 +378,12 @@ module.exports = class Zahard extends Source  {
         sourceInfo.isCloudFlareSite = false;
         
         var filters = [];
+        var IgnoreFIl = {};
+        IgnoreFIl.paramKey = 'esa';
+        IgnoreFIl.displayName = 'NOTE: Using text search will not work it will just ignore it';
+        IgnoreFIl.type = 'choice';
+        IgnoreFIl.options = {};
+
         var authorArtistFilter = {}; 
         authorArtistFilter.paramKey = 'author';
         authorArtistFilter.displayName = 'Author';
@@ -414,6 +420,7 @@ module.exports = class Zahard extends Source  {
         AscendingLISTS.options['false'] = 'False';
         AscendingLISTS.default = 'false';
 
+        filters.push(IgnoreFIl);
         filters.push(authorArtistFilter);
         filters.push(GeneresLISTS);
         filters.push(sortFilter);

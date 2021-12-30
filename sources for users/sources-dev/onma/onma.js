@@ -386,6 +386,12 @@ module.exports = class Onma extends Source  {
         sourceInfo.url = this.baseUrl;
         sourceInfo.isCloudFlareSite = false;
         
+        var IgnoreFIl = {};
+        IgnoreFIl.paramKey = 'esa';
+        IgnoreFIl.displayName = 'NOTE: Using text search will not work it will just ignore it';
+        IgnoreFIl.type = 'choice';
+        IgnoreFIl.options = {};
+
         var filters = [];
         var authorArtistFilter = {}; 
         authorArtistFilter.paramKey = 'author';
@@ -422,7 +428,8 @@ module.exports = class Onma extends Source  {
         AscendingLISTS.options['true'] = 'True';
         AscendingLISTS.options['false'] = 'False';
         AscendingLISTS.default = 'false';
-
+        
+        filters.push(IgnoreFIl);
         filters.push(authorArtistFilter);
         filters.push(GeneresLISTS);
         filters.push(sortFilter);

@@ -466,6 +466,10 @@ module.exports = class Nhentai extends Source  {
         var $ = cheerio.load(response);
         var numbers = query.match(/^[0-9]+$/);
         if(numbers){
+            const status = $('title').text()
+            if(status.includes('404')){
+            json = []
+            } else {
             var url = `/g/${query}`
             $('span.before').remove()
             $('span.after').remove()
@@ -473,6 +477,7 @@ module.exports = class Nhentai extends Source  {
             var thumbnail = $("#cover > a > img").attr("data-src")
             var rank = '0'
             json.push({name, url, thumbnail,rank})
+           }
         } else {
             $(searchMangaSelector).each(function (i, elem) {
                 json.push(new Nhentai().searchMangaFromElement($(this)));

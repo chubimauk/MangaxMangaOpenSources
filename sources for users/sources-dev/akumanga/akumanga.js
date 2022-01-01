@@ -208,7 +208,7 @@ module.exports = class Akumanga extends Source  {
         } else {
             chapterNumber = "?";
         }
-        return super.chapter(url, "English", volumeNumber, chapterNumber, name, date_upload, scanlator);
+        return super.chapter(url, "Arabic", volumeNumber, chapterNumber, name, date_upload, scanlator);
     }
     
      chapterListParse(response, $, seriesURL){

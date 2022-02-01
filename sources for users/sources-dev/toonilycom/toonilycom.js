@@ -12,23 +12,39 @@ module.exports = class ToonilyCom extends Source  {
         this.baseUrl = 'https://toonily.com';
         
     }
-    getRequestWithHeaders(method,url) {
-        var userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0';
-        var hosts = this.baseUrl.replace(/^(https?:|)\/\//, '')
+    
+    getRequestWithHeaders(method,url,refer) {
+        var userAgent = '';
+        var cookie = '';
+        
+        if(this.cfheaders != null){
+            if(this.cfheaders['User-Agent'] != null){
+                userAgent = this.cfheaders['User-Agent'];
+            }
+            if(this.cfheaders['Cookie'] != null){
+                cookie = this.cfheaders['Cookie'];
+            }
+        }
+        console.log("toonilycom cfheaders -- ", this.cfheaders);
                var options = {
                 'method': method,
                 'url': url,
                 'headers': {
-                  'Host': hosts,
-                  'User-Agent': userAgent,
-                  'Referer': this.baseUrl,
-                  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-                  'Accept-Language': 'en-us',
-                  'Connection': 'keep-alive',
-                  'X-Requested-With': 'XMLHttpRequest',
+                    'User-Agent': userAgent,
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.5',
+                    'Referer': refer,
+                    'Connection': 'keep-alive',
+                    'Cookie': cookie,
+                    'Upgrade-Insecure-Requests': '1',
+                    'Sec-Fetch-Dest': 'document',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'same-origin',
+                    'Sec-Fetch-User': '?1',
+                    'TE': 'trailers'
                 },
                 agentOptions: {
-                    ciphers: 'AES256-SHA'
+                    ciphers: 'AES128-SHA'
                   }
               };
         return options;
@@ -55,7 +71,7 @@ module.exports = class ToonilyCom extends Source  {
     }
     
     latestUpdatesRequest(page) {
-        return this.getRequestWithHeaders("GET",`${this.baseUrl}/page/${page}?s=&post_type=wp-manga&m_orderby=latest`); //headers?
+        return this.getRequestWithHeaders("GET",`${this.baseUrl}/page/${page}?s=&post_type=wp-manga&m_orderby=latest`,"https://toonily.com/?s=&post_type=wp-manga"); //headers?
     }
     
     latestUpdatesSelector() {
@@ -66,7 +82,7 @@ module.exports = class ToonilyCom extends Source  {
         return this.mangaFromElement(element)
     }
     popularMangaRequest(page) {
-        return this.getRequestWithHeaders("GET",`${this.baseUrl}/page/${page}/?s=&post_type=wp-manga&m_orderby=views`); //headers?
+        return this.getRequestWithHeaders("GET",`${this.baseUrl}/page/${page}/?s=&post_type=wp-manga&m_orderby=views`,"https://toonily.com/?s=&post_type=wp-manga"); //headers?
     }
     
     popularMangaSelector() {
@@ -109,10 +125,10 @@ module.exports = class ToonilyCom extends Source  {
     
     chapterListRequest(seriesURL) {
         if(seriesURL.startsWith('http')){
-            return this.getRequestWithHeaders("GET",seriesURL);
+            return this.getRequestWithHeaders("GET",seriesURL,"https://toonily.com/");
         }
         else {
-            return this.getRequestWithHeaders("GET",super.chapterListRequest(seriesURL));
+            return this.getRequestWithHeaders("GET",super.chapterListRequest(seriesURL),"https://toonily.com/");
         }
     }
     
@@ -121,7 +137,7 @@ module.exports = class ToonilyCom extends Source  {
             return this.getRequestWithHeaders("GET",seriesURL);
         }
         else {
-            return this.getRequestWithHeaders("GET",super.mangaDetailsRequest(seriesURL));
+            return this.getRequestWithHeaders("GET",super.mangaDetailsRequest(seriesURL),"https://toonily.com/");
         }
     }
     
@@ -348,7 +364,7 @@ module.exports = class ToonilyCom extends Source  {
         var sourceInfo = {};
         sourceInfo.requiresLogin = false;
         sourceInfo.url = this.baseUrl;
-        sourceInfo.isCloudFlareSite = false;
+        sourceInfo.isCloudFlareSite = true;
         
         var filters = [];
         
@@ -386,6 +402,15 @@ module.exports = class ToonilyCom extends Source  {
         
         sourceInfo.filters = filters;
         
+        sourceInfo.displayInfo = []; //[JSONSourceDisplayInfoTag]?
+        
+        //jsonSourceDisplayInfoTag(type /*String - one of "bug", "content", "language", "contributor", "tracker", "note",*/, values /*[String]*/, hexColors /*HEX COLOR CODES [String]?*/)
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language",["English"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content",["Manga"],["Adult"],["#4D83C1","#BA3A17"]));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("contributor",["mangaxmanga"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("note",["Uses Cloudflare"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("tracker",["No"],[])); //should just be No or Yes
+        
         console.log("ToonilyCom sourceInfo -- ", sourceInfo);
         return sourceInfo;
     }
@@ -395,7 +420,7 @@ module.exports = class ToonilyCom extends Source  {
         var query = query = query.replace(/_/g,"+");
         if (Object.keys(filters).length === 0) {
             console.log("filters are empty");
-            var url = this.getRequestWithHeaders("GET",this.baseUrl + `/page/${page}?s=` + this.normalizeSearchQuery(query) + `&post_type=wp-manga`);
+            var url = this.getRequestWithHeaders("GET",this.baseUrl + `/page/${page}?s=` + this.normalizeSearchQuery(query) + `&post_type=wp-manga`,"https://toonily.com/?s=&post_type=wp-manga");
             console.log("attempting to fetch search request for ToonilyCom - searchUrl is ", url);
             return url;
         }
@@ -426,7 +451,7 @@ module.exports = class ToonilyCom extends Source  {
                     break;
                 }
             }
-            let finsihedur = this.getRequestWithHeaders("GET",url);
+            let finsihedur = this.getRequestWithHeaders("GET",url,"https://toonily.com/?s=&post_type=wp-manga");
 
             console.log("attempting to fetch search request for ToonilyCom - searchUrl is ", url);
             return finsihedur;

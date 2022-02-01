@@ -421,6 +421,14 @@ module.exports = class Readcomiconline extends Source  {
         
         sourceInfo.filters = filters;
         
+        sourceInfo.displayInfo = []; //[JSONSourceDisplayInfoTag]?
+        
+        //jsonSourceDisplayInfoTag(type /*String - one of "bug", "content", "language", "contributor", "tracker", "note",*/, values /*[String]*/, hexColors /*HEX COLOR CODES [String]?*/)
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language",["English"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content",["Comics"],["#4D83C1"]));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("contributor",["mangaxmanga"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("tracker",["No"],[])); //should just be No or Yes
+        
         console.log("readcomiconline sourceInfo -- ", sourceInfo);
         return sourceInfo;
     }

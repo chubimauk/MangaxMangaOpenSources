@@ -256,6 +256,22 @@ module.exports = class Source {
         jsonBrowserifyRequest.form = form;
         return jsonBrowserifyRequest;
     }
+
+    jsonChainedResponse(responseData /*[String:String]*/, nextRequest /*jsonBrowserifyRequest*/){
+        var jsonChainedResponse = {};
+        jsonChainedResponse.responseData = responseData;
+        jsonChainedResponse.nextRequest = nextRequest;
+        return jsonChainedResponse;
+    }
+    
+    //hexColors should match values in length if you want to specify colors, but not necessary to specify the colors
+    jsonSourceDisplayInfoTag(type /*String - one of "bug", "content", "language", "contributor", "tracker", "note",*/, values /*[String]*/, hexColors /*HEX COLOR CODES [String]?*/){
+        var jsonSourceDisplayInfoTag = {};
+        jsonSourceDisplayInfoTag.type = type;
+        jsonSourceDisplayInfoTag.values = values;
+        jsonSourceDisplayInfoTag.hexColors = hexColors; //can be null
+        return jsonSourceDisplayInfoTag
+    }
     
     
     //used by fetchPopularManga(page)

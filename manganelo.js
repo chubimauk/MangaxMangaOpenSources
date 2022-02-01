@@ -29,6 +29,15 @@ module.exports = class Manganelo extends Source  {
     
     //unique to Manganelo
     mangaFromElement(element /*cheerio element --> $(this)*/){
+        /* MangaBox
+         return SManga.create().apply {
+            element.select("h3 a").first().let {
+                url = it.attr("abs:href").substringAfter(baseUrl) // intentionally not using setUrlWithoutDomain
+                title = it.text()
+            }
+            thumbnail_url = element.select("img").first().attr("abs:src")
+        }*/
+        
         //https://manganato.com/manga-ls951475
         //https://readmanganato.com/manga-bn978870
         var coverElement = element.find('h3 a').first();
@@ -91,13 +100,21 @@ module.exports = class Manganelo extends Source  {
     }
     
     chapterListSelector() {
-        return "div.chapter-list div.row, ul.row-content-chapter li";
+        return "div.chapter-list div.row, ul.row-content-chapter li"; //mangaBox
     }
     
     
     
     //overriding source.js
     chapterListRequest(seriesURL) {
+        /*MangaBox
+         override fun chapterListRequest(manga: SManga): Request {
+            if (manga.url.startsWith("http")) {
+                return GET(manga.url, headers)
+            }
+            return super.chapterListRequest(manga)
+        }*/
+        
         if(seriesURL.startsWith('http')){
             return seriesURL;
         }
@@ -107,6 +124,14 @@ module.exports = class Manganelo extends Source  {
     }
     
     mangaDetailsRequest(seriesURL) {
+        /*MangaBox
+         override fun chapterListRequest(manga: SManga): Request {
+            if (manga.url.startsWith("http")) {
+                return GET(manga.url, headers)
+            }
+            return super.chapterListRequest(manga)
+        }*/
+        
         if(seriesURL.startsWith('http')){
             return seriesURL;
         }
@@ -118,12 +143,23 @@ module.exports = class Manganelo extends Source  {
     chapterFromElement(chapterElement, source){
         var $ = cheerio.load(chapterElement);
         
+        /*MangaBox
+         return SChapter.create().apply {
+            element.select("a").let {
+                url = it.attr("abs:href").substringAfter(baseUrl) // intentionally not using setUrlWithoutDomain
+                name = it.text()
+                scanlator = HttpUrl.parse(it.attr("abs:href"))!!.host() // show where chapters are actually from
+            }
+            date_upload = parseChapterDate(element.select("span").last().text(), element.ownerDocument().location()) ?: 0
+        }*/
+        
+        //console.log("manganelo chapterElement", chapterElement);
         var chapterAElement = $('a');
         var url = super.substringAfterFirst(this.baseUrl, chapterAElement.attr('href'));
         var name = chapterAElement.text();
         var scanlator = ""; //TODO for Manganelo
         var date_upload = $('span').last().text();
-
+        //Vol tbd. chapter 60
         var volumeNumber = '';
         var chapterNumber = '';
         const regex = RegExp(/\b\d+\.?\d?\b/g);
@@ -199,6 +235,13 @@ module.exports = class Manganelo extends Source  {
          console.log("chapterListParse loaded into cheerio");
         var thisReference = this;
         var chapters = [];
+        
+         /*MangaBox
+         val document = response.asJsoup()
+                return document.select(chapterListSelector())
+                    .map { chapterFromElement(it) }
+                    .also { if (it.isEmpty()) checkForRedirectMessage(document) }
+         */
          
          if ($('body').text().startsWith("REDIRECT :")){
              //Source URL has Changed
@@ -216,10 +259,10 @@ module.exports = class Manganelo extends Source  {
     }
     
     
-    mangaDetailsMainSelector(){
+    mangaDetailsMainSelector(){ //MangaBox
         return 'div.manga-info-top, div.panel-story-info';
     }
-    descriptionSelector(){
+    descriptionSelector(){ //MangaBox
         return "div#noidungm, div#panel-story-info-description";
     }
     thumbnailSelector(){
@@ -229,6 +272,25 @@ module.exports = class Manganelo extends Source  {
 
 
     mangaDetailsParse(response, $, seriesURL /*not necessary for manganelo but needs to match api*/){ //mangaDetails object
+        
+        //MangaBox
+        // return SManga.create().apply {
+        //    document.select(mangaDetailsMainSelector).firstOrNull()?.let { infoElement ->
+        //        title = infoElement.select("h1, h2").first().text()
+        //        author = infoElement.select("li:contains(author) a, td:containsOwn(author) + td").text()
+        //        status = parseStatus(infoElement.select("li:contains(status), td:containsOwn(status) + td").text())
+        //        genre = infoElement.select("div.manga-info-top li:contains(genres)").firstOrNull()
+        //            ?.select("a")?.joinToString { it.text() } // kakalot
+        //            ?: infoElement.select("td:containsOwn(genres) + td a").joinToString { it.text() } // nelo
+        //    } ?: checkForRedirectMessage(document)
+        //    description = document.select(descriptionSelector)?.firstOrNull()?.ownText()
+        //        ?.replace("""^$title summary:\s""".toRegex(), "")
+        //        ?.replace("""<\s*br\s*/?>""".toRegex(), "\n")
+        //        ?.replace("<[^>]*>".toRegex(), "")
+        //    thumbnail_url = document.select(thumbnailSelector).attr("abs:src")
+        //}
+        
+        //from Paper logic
         console.log("started mangaDetailsParse");
         if($ == null){
             //var $ = cheerio.load(response);
@@ -241,18 +303,29 @@ module.exports = class Manganelo extends Source  {
         let table = $('.variations-tableInfo', panel);
         let author = '';
         let artist = '';
+        let rating = 0;
         let status = 'ongoing';
+        let titles = [title];
+        let follows = 0;
+        let views = 0;
+        let lastUpdate = '';
+        let hentai = false;
         
+        //let tagSections: TagSection[] = [createTagSection({ id: '0', label: 'genres', tags: [] })]
         var genres = [];
         
         for (let row of $('tr', table).toArray()) {
           if ($(row).find('.info-alternative').length > 0) {
+            let alts = $('h2', table).text().split(/,|;/);
+            for (let alt of alts) {
+              titles.push(alt.trim());
+            }
           }
           else if ($(row).find('.info-author').length > 0) {
-            let authorAndArtist = $('.table-value', row).find('a').toArray()
-            author = $(authorAndArtist[0]).text();
-            if (authorAndArtist.length > 1) {
-              artist = $(authorAndArtist[1]).text();
+            let autart = $('.table-value', row).find('a').toArray()
+            author = $(autart[0]).text();
+            if (autart.length > 1) {
+              artist = $(autart[1]).text();
             }
           }
           else if ($(row).find('.info-status').length > 0) {
@@ -262,22 +335,110 @@ module.exports = class Manganelo extends Source  {
             let elems = $('.table-value', row).find('a').toArray();
             for (let elem of elems) {
               let text = $(elem).text();
-
+              //let id = $(elem).attr('href')?.split('/').pop()?.split('-').pop() || '';
+              if (text.toLowerCase().includes('smut')) {
+                hentai = true;
+              }
+              //tagSections[0].tags.push(createTag({ id: id, label: text }))
               genres.push(text);
             }
           }
         }
 
+        table = $('.story-info-right-extent', panel);
+        for (let row of $('p', table).toArray()) {
+          if ($(row).find('.info-time').length > 0) {
+            let time = new Date($('.stre-value', row).text().replace(/(-*(AM)*(PM)*)/g, ''));
+            lastUpdate = time.toDateString();
+          }
+          else if ($(row).find('.info-view').length > 0) {
+            views = $('.stre-value', row).text().replace(/,/g, '');
+          }
+        }
+
+        rating = $('[property=v\\:average]', table).text();
+        follows = $('[property=v\\:votes]', table).text();
         let description = $('.panel-story-info-description', panel).text();
+
+        //id, titles, image, raiting, status, artist, author, tags, views, follows, lastUpdate, desc, hentai
+        /*manga.push(createManga({
+          id: metadata.id,
+          titles: titles,
+          image: image,
+          rating: Number(rating),
+          status: status,
+          artist: artist,
+          author: author,
+          tags: tagSections,
+          views: views,
+          follows: follows,
+          lastUpdate: lastUpdate,
+          desc: summary,
+          hentai: hentai
+        }))*/
 
         console.log('finishedMangaDetails parse');
         return this.mangaDetails(title, thumbnail, description, author, artist, status, genres);
+        
+        
+        //based on Tachiyomi MangaBox -- author, genre not working
+        /*
+        var $ = cheerio.load(response);
+        var infoElement = $(this.mangaDetailsMainSelector()).first();
+        var title = infoElement.find('h1, h2').first().text();
+        var author = infoElement.find("li:contains('author') a, td:contains('author') + td").text(); //'li:contains(author) a, td:containsOwn(author) + td'
+        var genreElement = infoElement.find("div.manga-info-top li:contains('genres')");
+        var genre = '';
+        //if(genre == null){
+        //    console.log('kakalot genre logic');
+            genre = genreElement.find('a').text();//.join(); //kakalot
+        //}
+        if(genre == null || genre == ''){
+            console.log("nelo genre logic");
+            genre = genreElement.find('td:contains(genres) + td a').text();//.join(); //nelo //'td:containsOwn(genres) + td a'
+        }
+        var description = $(this.descriptionSelector()).first().text();
+        var thumbnail = $(this.thumbnailSelector()).attr('src');
+         */
+        
+        
+        //console.log("mangaDetailsParsed -- ", this.mangaDetails(title, thumbnail, description, author, "artist", "status", genre));
+        //return this.mangaDetails(title, thumbnail, description, author, "artist", "status", [genre]);
+
+        //var mangaDetails = super.mangaDetails("title", "thumbnail", "description", "author", "artist", "status", ["genre1"]);
+        //return mangaDetails;
+        
+        //document.select(".cover > img").first().let { coverElement ->
+        //    title = coverElement.attr("title")
+        //    thumbnail_url = coverElement.attr("abs:src")
+        //}
+
+        
+        
+        //default implementation
+        //var mangaDetails = super.mangaDetails("title", "thumbnail", "description", "author", "artist", "status", ["genre1"]);
+        //return mangaDetails;
     }
     
+    ///Default implementation
+    /*async fetchChapterListAndDetails(seriesURL){
+        var mangaDetails = super.mangaDetails("title", "thumbnail", "description", "author", "artist", "status", ["genre1"]);
+        mangaDetails.chapters = [super.chapter("url", "language", "0", "1", "title", "date_upload", "scanlator")];
+        return mangaDetails;
+    }*/
+    
+    //mangaBox
     pageListSelector() {
         return "div#vungdoc img, div.container-chapter-reader img";
     }
     
+    /*pageListRequest(chapter: SChapter): Request {
+        if (chapter.url.startsWith("http")) {
+            return GET(chapter.url, headers)
+        }
+        return super.pageListRequest(chapter)
+    }*/
+    //MangaBox
     pageListRequest(chapter) {
         if(chapter.chapter.startsWith('http')){
             return chapter.chapter; //headers?
@@ -288,11 +449,25 @@ module.exports = class Manganelo extends Source  {
     }
     
     
+    /*override fun pageListParse(document: Document): List<Page> {
+        return document.select(pageListSelector).mapIndexed { i, element ->
+            val url = element.attr("abs:src").let { src ->
+                if (src.startsWith("https://convert_image_digi.mgicdn.com")) {
+                    "https://images.weserv.nl/?url=" + src.substringAfter("//")
+                } else {
+                    src
+                }
+            }
+            Page(i, document.location(), url)
+        }
+    }*/
+    
     //override super because we need the chapter
     async fetchPageList(chapter){
         var pageListResponse = await this.send_request(this.pageListRequest(chapter));
         return this.pageListParse(pageListResponse,chapter);
     }
+    
     
     pageListParse(pageListResponse,chapter){
         var $ = cheerio.load(pageListResponse);
@@ -404,13 +579,30 @@ module.exports = class Manganelo extends Source  {
         
         return image;
     }
+    
+    
+    
+    
+    /*class Manganelo : MangaBox("Manganelo", "https://manganelo.com", "en") {
+        // Nelo's date format is part of the base class
+        override fun popularMangaRequest(page: Int): Request = GET("$baseUrl/genre-all/$page?type=topview", headers)
+        override fun popularMangaSelector() = "div.content-genres-item"
+        override val latestUrlPath = "genre-all/"
+        override val simpleQueryPath = "search/story/"
+        override fun searchMangaSelector() = "div.search-story-item, div.content-genres-item"
+        override fun getAdvancedGenreFilters(): List<AdvGenre> = getGenreFilters()
+            .drop(1)
+            .map { AdvGenre(it.first, it.second) }
+    }*/
 
     
+    //ENDPOINT 3 - PAGINATED LATEST //fetchLatestUpdates in Tachiyomi
     async fetchLatestManga(page /*Int*/){
         console.log("fetchLatestManga -- manganelo");
         var page = parseInt(page);
         
         var currentPageHtml = await this.send_request(this.latestUpdatesRequest(`${page}`));
+        //console.log("currentPageHtml -- ", currentPageHtml);
         return this.latestUpdatesParse(page, currentPageHtml);
     }
     
@@ -421,7 +613,24 @@ module.exports = class Manganelo extends Source  {
         
         var $ = cheerio.load(response);
         
-        //doesn't retrieve # of updates
+        //DEFAULT FROM PARSEDHTTPSOURCE.KT
+        
+        /*override fun latestUpdatesParse(response: Response): MangasPage {
+            val document = response.asJsoup()
+
+            val mangas = document.select(latestUpdatesSelector()).map { element ->
+                latestUpdatesFromElement(element)
+            }
+
+            val hasNextPage = latestUpdatesNextPageSelector()?.let { selector ->
+                document.select(selector).first()
+            } != null
+
+            return MangasPage(mangas, hasNextPage)
+        }*/
+        
+        //MATCHING JS DEFAULT IMPLEMENTATION
+        // THIS WORKS LIKE TACHIYOMI, doesn't retrieve # of updates
         var json = [];
         $(latestUpdatesSelector).each(function (i, elem) {
             var mangaUpdate = new Manganelo().latestUpdatesFromElement($(this));
@@ -431,8 +640,13 @@ module.exports = class Manganelo extends Source  {
         
         console.log("mangenlo latest -- ", json);
         
+        //var lastPageNumber = await this.getLastPageNumber(response); //this should work on every page for this source
         var mangasPage = {};
         mangasPage.mangas = json;
+        //mangasPage.hasNextPage = lastPageNumber > page;
+        //mangasPage.nextPage = page + 1; //this doesn't matter if hasNextPage is false
+        //return mangasPage;
+        
         
         
         var lastPageNumber = this.getLastPageNumberForLatest(response); //this should work on every page for this source
@@ -499,6 +713,14 @@ module.exports = class Manganelo extends Source  {
         
         sourceInfo.filters = filters;
         
+        sourceInfo.displayInfo = []; //[JSONSourceDisplayInfoTag]?
+        
+        //jsonSourceDisplayInfoTag(type /*String - one of "bug", "content", "language", "contributor", "tracker", "note",*/, values /*[String]*/, hexColors /*HEX COLOR CODES [String]?*/)
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language",["English"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content",["Manga"],["#4D83C1"]));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("contributor",["mangaxmanga"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("tracker",["No"],[])); //should just be No or Yes
+        
         console.log("manganelo sourceInfo -- ", sourceInfo);
         return sourceInfo;
     }
@@ -532,7 +754,8 @@ module.exports = class Manganelo extends Source  {
             }
             var genreInclude = "";
             var genreExclude = "";
-
+            //getGenresList
+            ////////////////////
             for(var i=0; i<filters.length; i++){
                 switch(filters[i].key) {
                   case "sort":
@@ -575,6 +798,25 @@ module.exports = class Manganelo extends Source  {
         }
     }
     
+    
+    /*// TACHIYOMI Based on change_alias JS function from Mangakakalot's website
+    @SuppressLint("DefaultLocale")
+    open fun normalizeSearchQuery(query: String): String {
+        var str = query.toLowerCase()
+        str = str.replace("[àáạảãâầấậẩẫăằắặẳẵ]".toRegex(), "a")
+        str = str.replace("[èéẹẻẽêềếệểễ]".toRegex(), "e")
+        str = str.replace("[ìíịỉĩ]".toRegex(), "i")
+        str = str.replace("[òóọỏõôồốộổỗơờớợởỡ]".toRegex(), "o")
+        str = str.replace("[ùúụủũưừứựửữ]".toRegex(), "u")
+        str = str.replace("[ỳýỵỷỹ]".toRegex(), "y")
+        str = str.replace("đ".toRegex(), "d")
+        str = str.replace("""!|@|%|\^|\*|\(|\)|\+|=|<|>|\?|/|,|\.|:|;|'| |"|&|#|\[|]|~|-|$|_""".toRegex(), "_")
+        str = str.replace("_+_".toRegex(), "_")
+        str = str.replace("""^_+|_+$""".toRegex(), "")
+        return str
+    }*/
+    
+    
     normalizeSearchQuery(query /*String*/) /*:String*/ {
         var query = query.toLowerCase();
         query = query.replace(/[àáạảãâầấậẩẫăằắặẳẵ]+/g, "a");
@@ -585,14 +827,18 @@ module.exports = class Manganelo extends Source  {
         query = query.replace(/[ỳýỵỷỹ]+/g, "y");
         query = query.replace(/[đ]+/g, "d");
         query = query.replace(" ","_"); //remove spaces //this is what will be in the URL _ instead of a space -- fixes search with spaces
+        //TODO
+        //str = str.replace("""!|@|%|\^|\*|\(|\)|\+|=|<|>|\?|/|,|\.|:|;|'| |"|&|#|\[|]|~|-|$|_""".toRegex(), "_")
+        //str = str.replace("_+_".toRegex(), "_")
+        //str = str.replace("""^_+|_+$""".toRegex(), "")
         
         return query;
         
     }
     
         
-    searchMangaParse(page /*Int*/, response /*String -- latestUpdatesResponse -- currentPageHtml */, query, filters){
-        var page = parseInt(page);
+    searchMangaParse(page /*Int*/, response /*String -- latestUpdatesResponse -- currentPageHtml */, query, filters){ //query filters needed for mangasee
+        var page = parseInt(page); //protect WKNodeBrowserify
         var searchMangaSelector = this.searchMangaSelector();
         var json = [];
         
@@ -666,4 +912,97 @@ module.exports = class Manganelo extends Source  {
             '42':'Yuri'
         };
     }
+    
+    //ENDPOINT 2- GET ALL
+     //MANGANELO GET ALL
+     //this uses promises to do everything in parallel -> 7 seconds to get all results
+    async getAll() {
+        console.log(this.popularMangaRequest(1));
+        var firstPageHtml = await new Manganelo().send_request(this.popularMangaRequest(1));
+
+        //this.getAllPageNumbers(firstPageHtml);
+        var allPageNumbers = this.getAllPageNumbers(firstPageHtml); //[1] --> set to 1 to only get first page
+        console.log("allPageNumbers=",allPageNumbers);
+        var popularMangaSelector = this.popularMangaSelector();
+        var json = [];
+        
+        /* THIS IS TOO MANY CONCURRENT REQUESTS NEED TO SPLIT THIS SOMEHOW
+        const promises = allPageNumbers.map(number => new MangaDex().send_request(this.popularMangaRequest(`${number}`)));
+        
+        await Promise.all(promises).then((data) => {
+            data.forEach(function(currentPageHtml){
+                var $ = cheerio.load(currentPageHtml);
+                $(popularMangaSelector).each(function (i, elem) {
+                    json.push(new MangaDex().popularMangaFromElement($(this)));
+                });
+            });
+                                         
+        });
+         */
+        var current = 1;
+        var maxConcurrent = 11; //this batches requests to be a maximum of 11 at a time
+        while(current < allPageNumbers[allPageNumbers.length-1]){
+            var starting = current;
+            var last = current;
+            var batchPages = [];
+            for (var i = current; i < current + maxConcurrent; i++) {
+                if(i > allPageNumbers[allPageNumbers.length-1]){
+                    //skip non-existent page
+                    //current = i - 1;
+                    //break;
+                }
+                else {
+                    batchPages.push(i);
+                    last = i;
+                }
+            }
+            current = last + 1;
+            console.log("starting batched for ",starting, "-", last);
+            
+            const promises = batchPages.map(number => new Manganelo().send_request(this.popularMangaRequest(`${number}`)));
+            
+            /*
+            await Promise.all(promises).then((data) => {
+                data.forEach(function(currentPageHtml){
+                    var $ = cheerio.load(currentPageHtml);
+                    $(popularMangaSelector).each(function (i, elem) {
+                        json.push(new MangaDex().popularMangaFromElement($(this)));
+                    });
+                });
+                                             
+            });*/
+            
+            // THIS ALSO WORKS
+            var batchedResults = await Promise.all(promises);
+            batchedResults.forEach(function(currentPageHtml){
+                    var $ = cheerio.load(currentPageHtml);
+                    $(popularMangaSelector).each(function (i, elem) {
+                        json.push(new Manganelo().popularMangaFromElement($(this)));
+                    });
+                });
+             
+            console.log("finished loop for batched for ",starting, "-", last);
+        }
+        
+        console.log("done getting all manganelo");
+        return json;
+    }
+    
+    getAllPageNumbers(firstPageHtml){
+        var lastNumber = this.getLastPageNumber(firstPageHtml);
+         
+        //[...Array(N+1).keys()].slice(1)
+        //var pageNumbers = [...Array(lastNumber+1).keys()].slice(1); //this works
+        //console.log("pageNumbers-",pageNumbers);
+        console.log("lastNumber is ", lastNumber);
+        
+        var pageNumbers = [];
+        for (var i = 1; i <= lastNumber; i++) { //with lastNumber works locally, but times out on phone (796 pages so... 31802 manga)
+          pageNumbers.push(i);
+        }
+        console.log("pageNumbers-",pageNumbers);
+        
+        return pageNumbers;
+    }
+
 }

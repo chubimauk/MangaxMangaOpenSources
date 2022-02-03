@@ -217,9 +217,9 @@ module.exports = class Source {
         return mangasPage;
     }
     
-    mangaDetails(title, thumbnail, description, author, artist, status, genres /*[String]*/){
+        mangaDetails(name, thumbnail, description, author, artist, status, genres /*[String]*/){
         var mangaDetails = {};
-        mangaDetails.title = title;
+        mangaDetails.name = name; //TITLE is WRONG, JSONSeries has name as a property, no wonder this was a problem...
         mangaDetails.thumbnail = thumbnail;
         mangaDetails.description = description;
         mangaDetails.author = author;
@@ -255,6 +255,22 @@ module.exports = class Source {
         jsonBrowserifyRequest.headers = headers;
         jsonBrowserifyRequest.form = form;
         return jsonBrowserifyRequest;
+    }
+
+    jsonChainedResponse(responseData /*[String:String]*/, nextRequest /*jsonBrowserifyRequest*/){
+        var jsonChainedResponse = {};
+        jsonChainedResponse.responseData = responseData;
+        jsonChainedResponse.nextRequest = nextRequest;
+        return jsonChainedResponse;
+    }
+    
+    //hexColors should match values in length if you want to specify colors, but not necessary to specify the colors
+    jsonSourceDisplayInfoTag(type /*String - one of "bug", "content", "language", "contributor", "tracker", "note",*/, values /*[String]*/, hexColors /*HEX COLOR CODES [String]?*/){
+        var jsonSourceDisplayInfoTag = {};
+        jsonSourceDisplayInfoTag.type = type;
+        jsonSourceDisplayInfoTag.values = values;
+        jsonSourceDisplayInfoTag.hexColors = hexColors; //can be null
+        return jsonSourceDisplayInfoTag
     }
     
     
@@ -312,6 +328,10 @@ module.exports = class Source {
     
     
     //used by fetchChapterListAndDetails(seriesURL)
+    chapterListAndMangaDetailsRequest(seriesURL) {
+        //for updated api with infinite requests, will call this but to support all old sources defaults to calling chapter list request
+        return this.chapterListRequest(seriesURL);
+    }
     chapterListRequest(seriesURL) {
         return this.baseUrl + seriesURL; //headers?
     }

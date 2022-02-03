@@ -217,9 +217,9 @@ module.exports = class Source {
         return mangasPage;
     }
     
-    mangaDetails(title, thumbnail, description, author, artist, status, genres /*[String]*/){
+        mangaDetails(name, thumbnail, description, author, artist, status, genres /*[String]*/){
         var mangaDetails = {};
-        mangaDetails.title = title;
+        mangaDetails.name = name; //TITLE is WRONG, JSONSeries has name as a property, no wonder this was a problem...
         mangaDetails.thumbnail = thumbnail;
         mangaDetails.description = description;
         mangaDetails.author = author;
@@ -328,6 +328,10 @@ module.exports = class Source {
     
     
     //used by fetchChapterListAndDetails(seriesURL)
+    chapterListAndMangaDetailsRequest(seriesURL) {
+        //for updated api with infinite requests, will call this but to support all old sources defaults to calling chapter list request
+        return this.chapterListRequest(seriesURL);
+    }
     chapterListRequest(seriesURL) {
         return this.baseUrl + seriesURL; //headers?
     }

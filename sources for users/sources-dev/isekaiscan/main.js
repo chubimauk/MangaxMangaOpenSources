@@ -187,10 +187,29 @@ function mangaDetailsParse(source/*:String*/, response/*:htmlString*/, seriesURL
     return JSON.stringify(sources[source].mangaDetailsParse(response,null/*$*/,seriesURL)); //JSON.stringify(response)?
 }
 
+function chapterListAndMangaDetailsRequest(source/*:String*/,seriesURL/*:String*/){ //-> String or JSON.stringify(JSONBrowserifyRequest)
+    var request = sources[source].chapterListAndMangaDetailsRequest(seriesURL);
+    if (typeof request === 'string' || request instanceof String){
+        //just a string url
+        return request; //JSON.stringify(response)?
+    }
+    else {
+        //object request
+        return JSON.stringify(request);
+    }
+}
+
 //for now just use this one
-function chapterListAndMangaDetailsParse(source/*:String*/, response/*:htmlString*/, seriesURL){ //-> JSONSeries
+function chapterListAndMangaDetailsParse(source/*:String*/, response/*:htmlString*/, seriesURL/*, invisible jsonChainedResponse.responseData ONLY*/){ //-> JSONSeries
     //var $ = cheerio.load(response);
-    return JSON.stringify(sources[source].chapterListAndMangaDetailsParse(response,null/*$*/,seriesURL)); //JSON.stringify(response)?
+    if(arguments.length == 4){
+        //console.log("plp4 -- ", JSON.stringify(sources[source].pageListParse(response,chapter,arguments[3])));
+        return JSON.stringify(sources[source].chapterListAndMangaDetailsParse(response,null/*$*/,seriesURL,arguments[3])); //JSON.stringify(response)?
+    }
+    else {
+        //console.log("plp3 -- ", JSON.stringify(sources[source].pageListParse(response,chapter)));
+        return JSON.stringify(sources[source].chapterListAndMangaDetailsParse(response,null/*$*/,seriesURL)); //JSON.stringify(response)?
+    }
 }
 
 
@@ -248,15 +267,24 @@ function pageListRequest(source/*:String*/,chapterURL/*:String*/,chapterNumber/*
     }
 }
 
-function pageListParse(source/*:String*/,response/*:response*/,chapterURL/*:String*/,chapterNumber/*:String*/,seriesURL/*:String*/){ //-> [JSONPage]
-    //necessary for manganelo
+function pageListParse(source/*:String*/,response/*:response*/,chapterURL/*:String*/,chapterNumber/*:String*/,seriesURL/*:String*//*, invisible jsonChainedResponse.responseData ONLY*/){ //-> [JSONPage]
+    //necessary for isekaiscan
     var chapter = {
         series: seriesURL,
         chapter: chapterURL,
         number: chapterNumber
     };
     
-    return JSON.stringify(sources[source].pageListParse(response,chapter)); //JSON.stringify(response)?
+    console.log("pageListParse main arguments -- ", arguments);
+    
+    if(arguments.length == 6){
+        console.log("plp6 -- ", JSON.stringify(sources[source].pageListParse(response,chapter,arguments[5])));
+        return JSON.stringify(sources[source].pageListParse(response,chapter,arguments[5])); //JSON.stringify(response)?
+    }
+    else {
+        console.log("plp5 -- ", JSON.stringify(sources[source].pageListParse(response,chapter)));
+        return JSON.stringify(sources[source].pageListParse(response,chapter)); //JSON.stringify(response)?
+    }
 }
 
 //for use by browserify
@@ -369,4 +397,4 @@ function setTrackerUser(source/*:String*/,username/*String*/){ //-> string respo
 //MARK: end for Trackers
 
 
-module.exports = {popularMangaRequest: popularMangaRequest, popularMangaParse: popularMangaParse, latestUpdatesRequest: latestUpdatesRequest, latestUpdatesParse: latestUpdatesParse, searchMangaRequest: searchMangaRequest, searchMangaParse: searchMangaParse, chapterListRequest: chapterListRequest, chapterListParse: chapterListParse, mangaDetailsRequest: mangaDetailsRequest, mangaDetailsParse: mangaDetailsParse, chapterListAndMangaDetailsParse: chapterListAndMangaDetailsParse, getSourceInfo: getSourceInfo, loginRequest: loginRequest, loginParse: loginParse, setCookie: setCookie, setCFHeaders: setCFHeaders, pageListRequest: pageListRequest, pageListParse: pageListParse, getAvailableSources: getAvailableSources, setTrackerClient:setTrackerClient, setTrackerAuth: setTrackerAuth, trackerAddToListRequest:trackerAddToListRequest, trackerAddToListParse:trackerAddToListParse, getTrackerInfo:getTrackerInfo,getMangaFromListRequest:getMangaFromListRequest,getMangaFromListParse:getMangaFromListParse,userListMangaRequest:userListMangaRequest,userListMangaParse:userListMangaParse,currentUserRequest:currentUserRequest,currentUserParse:currentUserParse,setTrackerUser:setTrackerUser};
+module.exports = {popularMangaRequest: popularMangaRequest, popularMangaParse: popularMangaParse, latestUpdatesRequest: latestUpdatesRequest, latestUpdatesParse: latestUpdatesParse, searchMangaRequest: searchMangaRequest, searchMangaParse: searchMangaParse, chapterListRequest: chapterListRequest, chapterListParse: chapterListParse, mangaDetailsRequest: mangaDetailsRequest, mangaDetailsParse: mangaDetailsParse, chapterListAndMangaDetailsRequest: chapterListAndMangaDetailsRequest, chapterListAndMangaDetailsParse: chapterListAndMangaDetailsParse, getSourceInfo: getSourceInfo, loginRequest: loginRequest, loginParse: loginParse, setCookie: setCookie, setCFHeaders: setCFHeaders, pageListRequest: pageListRequest, pageListParse: pageListParse, getAvailableSources: getAvailableSources, setTrackerClient:setTrackerClient, setTrackerAuth: setTrackerAuth, trackerAddToListRequest:trackerAddToListRequest, trackerAddToListParse:trackerAddToListParse, getTrackerInfo:getTrackerInfo,getMangaFromListRequest:getMangaFromListRequest,getMangaFromListParse:getMangaFromListParse,userListMangaRequest:userListMangaRequest,userListMangaParse:userListMangaParse,currentUserRequest:currentUserRequest,currentUserParse:currentUserParse,setTrackerUser:setTrackerUser};

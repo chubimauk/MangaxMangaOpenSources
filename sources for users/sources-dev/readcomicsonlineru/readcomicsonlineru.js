@@ -406,6 +406,12 @@ module.exports = class Readcomicsonlineru extends Source  {
 
         sourceInfo.filters = filters;
         
+        sourceInfo.displayInfo = []; 
+        
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language",["English"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content",["Comics"],["#4D83C1"]));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("contributor",["xOnlyFadi"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("tracker",["No"],[]));
         console.log("Readcomicsonlineru sourceInfo -- ", sourceInfo);
         return sourceInfo;
     }

@@ -295,7 +295,7 @@ module.exports = class Mangaworld extends Source  {
   
         var results = json.length;
         if (hasNextPage){
-          results = results * 1;
+          results = results * page;
         }
         
         return super.mangasPage(json, hasNextPage, nextPage, results);
@@ -325,7 +325,7 @@ module.exports = class Mangaworld extends Source  {
         var results = json.length;
         
         if (hasNextPage){
-            results = results * 1;
+            results = results * page;
         }
         return this.mangasPage(json, hasNextPage, nextPage, results);
     }
@@ -385,6 +385,12 @@ module.exports = class Mangaworld extends Source  {
         
         sourceInfo.filters = filters;
         
+        sourceInfo.displayInfo = []; 
+        
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language",["Italian"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content",["Manga","Manhwa","Adult"],["#4D83C1","#4D83C1","#ff1100"]));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("contributor",["xOnlyFadi"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("tracker",["No"],[]));
         console.log("Mangaworld sourceInfo -- ", sourceInfo);
         return sourceInfo;
     }
@@ -485,7 +491,7 @@ module.exports = class Mangaworld extends Source  {
 
         var results = json.length;
         if (mangasPage.hasNextPage){
-          results = results * 1;
+          results = results * page;
         }
         mangasPage.results = results;
         return mangasPage;

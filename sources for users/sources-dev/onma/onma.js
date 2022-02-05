@@ -438,6 +438,12 @@ module.exports = class Onma extends Source  {
 
         sourceInfo.filters = filters;
         
+        sourceInfo.displayInfo = []; 
+        
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language",["Arabic"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content",["Manga","Manhwa","Manhua"],["#4D83C1","#4D83C1","#4D83C1"]));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("contributor",["xOnlyFadi"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("tracker",["No"],[]));
         console.log("Onma sourceInfo -- ", sourceInfo);
         return sourceInfo;
     }

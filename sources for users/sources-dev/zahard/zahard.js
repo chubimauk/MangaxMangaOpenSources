@@ -429,6 +429,12 @@ module.exports = class Zahard extends Source  {
 
         sourceInfo.filters = filters;
         
+        sourceInfo.displayInfo = []; 
+        
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language",["Arabic"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content",["Webtoons"],["#4D83C1"]));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("contributor",["xOnlyFadi"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("tracker",["No"],[]));
         console.log("Zahard sourceInfo -- ", sourceInfo);
         return sourceInfo;
     }

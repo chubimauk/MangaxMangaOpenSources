@@ -423,7 +423,13 @@ module.exports = class AsuraScans extends Source  {
         filters.push(GeneresLISTS);
 
         sourceInfo.filters = filters;
+        sourceInfo.displayInfo = [];
         
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language",["English"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content",["Manwha","Manhua"],["#4D83C1","#4D83C1"]));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("contributor",["xOnlyFadi"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("note",["High Quality Scans"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("tracker",["No"],[]));
         console.log("ToonilyCom sourceInfo -- ", sourceInfo);
         return sourceInfo;
     }

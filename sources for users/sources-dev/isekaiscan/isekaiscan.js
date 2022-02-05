@@ -539,7 +539,7 @@ module.exports = class Isekaiscan extends Source  {
 
         sourceInfo.filters = filters;
         
-        sourceInfo.displayInfo = []; //[JSONSourceDisplayInfoTag]?
+        sourceInfo.displayInfo = [];
         
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language",["English"],null));
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content",["Manga","Manwha","Manhua","Adult"],["#4D83C1","#4D83C1","#4D83C1","#ff1100"]));

@@ -360,7 +360,6 @@ module.exports = class Nhentai extends Source  {
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language",["English"],null));
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content",["Manga","Doujinshi","Adult"],["#ff1100","#ff1100","#ff1100"]));
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("contributor",["xOnlyFadi"],null));
-        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("note",["Details requires infinite requests"],null));
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("tracker",["No"],[]));
         console.log("Nhentai sourceInfo -- ", sourceInfo);
         return sourceInfo;

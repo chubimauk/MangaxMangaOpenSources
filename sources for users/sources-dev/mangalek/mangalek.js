@@ -5,35 +5,29 @@ var rp = require('request-promise');
 var cheerio = require('cheerio');
 
 
-module.exports = class ToonilyCom extends Source  {
+module.exports = class Mangalek extends Source  {
 
     constructor() {
         super();
-        this.baseUrl = 'https://toonily.com';
+        this.baseUrl = 'https://mangalek.com';
         
     }
     getRequestWithHeaders(method,url) {
-        var userAgent = '';
-        var cookie = '';
+        var userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0';
         var hosts = this.baseUrl.replace(/^(https?:|)\/\//, '')
-
-       if(this.cfheaders != null){
-            if(this.cfheaders['User-Agent'] != null){
-                userAgent = this.cfheaders['User-Agent'];
-            }
-            if(this.cfheaders['Cookie'] != null){
-                cookie = this.cfheaders['Cookie'];
-            }
-        }
-        var options = {
-            'method': method,
-            'url': url,
-            'headers': {
-              'Host': hosts,
-              'User-Agent': userAgent,
-              'Cookie': cookie,
-            }
-          };
+               var options = {
+                'method': method,
+                'url': url,
+                'headers': {
+                  'Host': hosts,
+                  'User-Agent': userAgent,
+                  'Referer': this.baseUrl,
+                  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                  'Accept-Language': 'en-us',
+                  'Connection': 'keep-alive',
+                  'X-Requested-With': 'XMLHttpRequest',
+                }
+              };
         return options;
     }
     GetMangaFormDetails(url,popular,page){
@@ -49,17 +43,6 @@ module.exports = class ToonilyCom extends Source  {
         }else {
           sidebar = 'right'
         }
-        var userAgent = '';
-        var cookie = '';
-        
-        if(this.cfheaders != null){
-            if(this.cfheaders['User-Agent'] != null){
-                userAgent = this.cfheaders['User-Agent'];
-            }
-            if(this.cfheaders['Cookie'] != null){
-                cookie = this.cfheaders['Cookie'];
-            }
-        }
         var hosts = this.baseUrl.replace(/^(https?:|)\/\//, '')
         var pages = page - 1
         var options = {
@@ -67,8 +50,7 @@ module.exports = class ToonilyCom extends Source  {
           'url': url,
           'headers': {
             'Host': hosts,
-            'User-Agent': userAgent,
-            'Cookie': cookie,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0',
             'Referer': this.baseUrl,
             'Content-Type': 'application/x-www-form-urlencoded'
           },
@@ -101,10 +83,10 @@ module.exports = class ToonilyCom extends Source  {
         var coverElement = element.find('h3 a').first();
         var url = super.substringAfterFirst('.com', 'https:' + coverElement.attr('href'));
         var name = coverElement.text();
-        var thumbnai = element.find('img').attr('data-src');
+        var thumbnai = element.find('img').attr('src');
         var rank = '0';
-        if (typeof thumbnai === undefined){
-            thumbnai = element.find('img').attr('src');
+        if (typeof thumbnai === "undefined"){
+            thumbnai = element.find('img').attr('data-src');
         }
         var thumbnail =  thumbnai + '?'
         return super.manga(name,url,thumbnail,rank);
@@ -134,30 +116,18 @@ module.exports = class ToonilyCom extends Source  {
         var coverElement = element.find('h3 a').first();
         var url = super.substringAfterFirst('.com', 'https:' + coverElement.attr('href'));
         var name = coverElement.text();
-        var thumbnai = element.find('img').attr('data-src');
+        var thumbnai = element.find('img').attr('src');
         var rank = '0';
-        if (typeof thumbnai === undefined){
-            thumbnai = element.find('img').attr('src');
+        if (typeof thumbnai === "undefined"){
+            thumbnai = element.find('img').attr('data-src');
         }
         var thumbnail =  thumbnai + '?'
         return super.manga(name,url,thumbnail,rank);
     }
 
-    searchMangaNextPageSelector(firstPageHtml){
-        var $ = cheerio.load(firstPageHtml);
-        var nextPage = $('a.nextpostslink');
-        if (nextPage.contents().length !== 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-    
     chapterListSelector() {
         return "li.wp-manga-chapter";
     }
-    
-    
     
     chapterListRequest(seriesURL) {
         if(seriesURL.startsWith('http')){
@@ -236,7 +206,7 @@ module.exports = class ToonilyCom extends Source  {
         } else {
             chapterNumber = "?";
         }
-        return super.chapter(url, "English", volumeNumber, chapterNumber, name, date_upload, scanlator);
+        return super.chapter(url, "Arabic", volumeNumber, chapterNumber, name, date_upload, scanlator);
     }
     
      chapterListParse(response, $, seriesURL){
@@ -267,13 +237,22 @@ module.exports = class ToonilyCom extends Source  {
         let titl = $('div.post-title h1')
         titl.find("span").remove()
         let title = titl.text().trim()
-        let thumbnai = $('div.summary_image img').attr('data-src');
+        let thumbnai = $('div.summary_image img').attr('src');
         let author = $('div.author-content').text().trim();
         let artist = $('div.artist-content').text().trim();
-        let status = $('div.post-status div.summary-heading:contains("Status")').next().text().toUpperCase().trim();
+        let status = $('div.post-status div.summary-heading:contains("الحالة")').next().text().trim();
         var genres = [];
-        if (typeof thumbnai === undefined){
-            thumbnai = $('div.summary_image img').attr('src');
+        if (typeof thumbnai === "undefined"){
+            thumbnai = $('div.summary_image img').attr('data-src');
+        }
+        if(status.includes("مستمرة")){
+            status = "ONGOING"
+        }else if(status.includes("مكتملة")){
+            status = "COMPLETED"
+        }else if(status.includes("ألغيت")){
+            status = "CANCELED"
+        }else if(status.includes("في الانتظار")){
+            status = "ON HOLD"
         }
         var thumbnail =  thumbnai + '?'
         $('div.genres-content a').each(function (i, chapterElement){
@@ -291,10 +270,10 @@ module.exports = class ToonilyCom extends Source  {
     
     pageListRequest(chapter) {
         if(chapter.chapter.startsWith('http')){
-            return this.getRequestWithHeaders("GET",chapter.chapter);
+            return chapter.chapter;
         }
         else {
-            return this.getRequestWithHeaders("GET",super.pageListRequest(chapter));
+            return super.pageListRequest(chapter);
         }
     }
     
@@ -305,40 +284,21 @@ module.exports = class ToonilyCom extends Source  {
     }
     
     pageListParse(pageListResponse,chapter){
-        var userAgent = '';
-        var cookie = '';
-        
-       if(this.cfheaders != null){
-            if(this.cfheaders['User-Agent'] != null){
-                userAgent = this.cfheaders['User-Agent'];
-            }
-            if(this.cfheaders['Cookie'] != null){
-                cookie = this.cfheaders['Cookie'];
-            }
-        }
-
         var $ = cheerio.load(pageListResponse);
         var thisReference = this;
         var pages = [];
         $(this.pageListSelector()).each(function (i, pageElement){
              var url = $(pageElement).attr('src');
              if (typeof url === "undefined"){
-                url = $(pageElement).attr('data-src');
+                url = $('div.summary_image img').attr('data-src');
             }
              var headers = {};
-            headers['Referer'] = thisReference.pageListRequest(chapter)['url'];
+            headers['Referer'] = thisReference.pageListRequest(chapter);
             headers['Content-Type'] = 'image/jpeg';
-            headers['Cookie'] = cookie;
-            headers['User-Agent'] = userAgent;
-
             pages.push(thisReference.jsonBrowserifyRequest(url.trim(),null,null,headers,null));
         });
-        console.log('ToonilyCom pages', pages);
-        if(pages.length == 0){
-            return "error - set your cookie";
-        } else {
-            return pages;
-        }
+        console.log('Mangalek pages', pages);
+        return pages;
     }
     
     async fetchPageImage(page){
@@ -365,7 +325,7 @@ module.exports = class ToonilyCom extends Source  {
 
     
     async fetchLatestManga(page){
-        console.log("fetchLatestManga -- ToonilyCom");
+        console.log("fetchLatestManga -- Mangalek");
         var page = parseInt(page);
         
         var currentPageHtml = await this.send_request(this.latestUpdatesRequest(`${page}`));
@@ -379,12 +339,12 @@ module.exports = class ToonilyCom extends Source  {
 
         var json = [];
         $(latestUpdatesSelector).each(function (i, elem) {
-            var mangaUpdate = new ToonilyCom().latestUpdatesFromElement($(this));
+            var mangaUpdate = new Mangalek().latestUpdatesFromElement($(this));
             mangaUpdate.updates = 1;
             json.push(mangaUpdate);
         });
         
-        console.log("ToonilyCom latest -- ", json);
+        console.log("Mangalek latest -- ", json);
         
         var mangasPage = {};
         mangasPage.mangas = json;
@@ -422,12 +382,13 @@ module.exports = class ToonilyCom extends Source  {
             results = results * 1;
         }
         return this.mangasPage(json, hasNextPage, nextPage, results);
-    }  
+    }
+    
     fetchSourceInfo() {
         var sourceInfo = {};
         sourceInfo.requiresLogin = false;
         sourceInfo.url = this.baseUrl;
-        sourceInfo.isCloudFlareSite = true;
+        sourceInfo.isCloudFlareSite = false;
         
         var filters = [];
         
@@ -504,25 +465,23 @@ module.exports = class ToonilyCom extends Source  {
 
         sourceInfo.filters = filters;
         
-        sourceInfo.displayInfo = [];
+        sourceInfo.displayInfo = []; 
         
-        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language",["English"],null));
-        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content",["Manga","Manwha","Manhua","Adult"],["#4D83C1","#4D83C1","#4D83C1","#ff1100"]));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language",["Arabic"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content",["Manga","Manhwa","Manhua"],["#4D83C1","#4D83C1","#4D83C1"]));
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("contributor",["xOnlyFadi"],null));
-        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("note",["Uses Cloudflare"],null));
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("tracker",["No"],[]));
-
-        console.log("ToonilyCom sourceInfo -- ", sourceInfo);
+        console.log("Mangalek sourceInfo -- ", sourceInfo);
         return sourceInfo;
     }
     
     searchMangaRequest(page, query, filters) {
-        console.log("ToonilyCom filters -- ", filters);
+        console.log("Mangalek filters -- ", filters);
         var query = query = query.replace(/_/g,"+");
         if (Object.keys(filters).length === 0) {
             console.log("filters are empty");
             var url = this.getRequestWithHeaders("GET",this.baseUrl + `/page/${page}?s=` + this.normalizeSearchQuery(query) + `&post_type=wp-manga`);
-            console.log("attempting to fetch search request for ToonilyCom - searchUrl is ", url);
+            console.log("attempting to fetch search request for Mangalek - searchUrl is ", url);
             return url;
         }
         else {
@@ -569,7 +528,7 @@ module.exports = class ToonilyCom extends Source  {
             }
             let finsihedur = this.getRequestWithHeaders("GET",url);
 
-            console.log("attempting to fetch search request for ToonilyCom - searchUrl is ", finsihedur);
+            console.log("attempting to fetch search request for Mangalek - searchUrl is ", finsihedur);
             return finsihedur;
         }
     }
@@ -588,8 +547,7 @@ module.exports = class ToonilyCom extends Source  {
         return query;
         
     }
-    
-        
+
     searchMangaParse(page, response, query, filters){
         var page = parseInt(page);
         var searchMangaSelector = this.searchMangaSelector();
@@ -597,18 +555,23 @@ module.exports = class ToonilyCom extends Source  {
         
         var $ = cheerio.load(response);
         $(searchMangaSelector).each(function (i, elem) {
-            json.push(new ToonilyCom().searchMangaFromElement($(this)));
+            json.push(new Mangalek().searchMangaFromElement($(this)));
         });
         
         var page = parseInt(page);
-        var lastPageNumber = this.searchMangaNextPageSelector(response);
-        console.log("lastPageNumber - ",lastPageNumber);
         var mangasPage = {};
         mangasPage.mangas = json;
-        mangasPage.hasNextPage = lastPageNumber;
+        if (query.length === 0){
+            mangasPage.hasNextPage = (json.length >= 10);
+        } else {
+            mangasPage.hasNextPage = (json.length >= 20);
+        }
         mangasPage.nextPage = page + 1;
 
         var results = json.length;
+        if (mangasPage.hasNextPage){
+          results = results * 1;
+        }
         mangasPage.results = results;
         console.log("mangasPage -- ", mangasPage);
         return mangasPage;
@@ -616,52 +579,128 @@ module.exports = class ToonilyCom extends Source  {
     
     getGenresList(){
         return {
-            "action-webtoon": "Action",
-            "adventure-webtoon": "Adventure",
-            "age-gap": "Age Gap",
-            "all-ages": "All Ages",
-            "bdsm": "BDSM",
-            "campus": "Campus",
-            "comedy-webtoon": "Comedy",
-            "crime": "Crime",
-            "drama-webtoon": "Drama",
-            "fantasy-webtoon": "Fantasy",
-            "female-friend": "Female Friend",
-            "gender-bender": "Gender Bender",
-            "gossip": "Gossip",
-            "harem-webtoon": "Harem",
-            "webtoon-historical": "Historical",
-            "horror-webtoon": "Horror",
-            "incest": "Incest",
-            "isekai": "Isekai",
-            "josei-manga": "Josei",
-            "magic": "Magic",
-            "martial-arts": "Martial Arts",
-            "mature-webtoon": "Mature",
-            "mystery-webtoon": "Mystery",
-            "ntr-webtoon": "NTR",
-            "office": "Office",
-            "psychological-webtoon": "Psychological",
-            "rape": "Rape",
-            "reincarnation": "Reincarnation",
-            "revenge": "Revenge",
-            "reverse-harem": "Reverse Harem",
-            "romance-webtoon": "Romance",
-            "school-life-webtoon": "School life",
-            "scifi-webtoon": "Sci-Fi",
-            "secret-relationship": "Secret Relationship",
-            "seinen-webtoon": "Seinen",
-            "shoujo": "Shoujo",
-            "shounen-webtoon": "Shounen",
-            "sliceoflife-webtoon": "Slice of Life",
-            "sports": "Sports",
-            "supernatural-webtoon": "Supernatural",
-            "thriller-webtoon": "Thriller",
-            "tragedy": "Tragedy",
-            "uncensored": "Uncensored",
-            "work-life": "Work Life",
-            "yaoi-webtoon": "Yaoi",
-            "yuri-webtoon": "Yuri",
+            "%d8%a5%d9%86%d8%aa%d9%82%d8%a7%d9%85": "إنتقام",
+            "%d8%a7%d8%ab%d8%a7%d8%b1%d9%87": "اثاره",
+            "%d8%a7%d8%b3%d8%a8%d9%88%d8%b9%d9%89": "اسبوعى",
+            "%d8%a7%d8%b4%d8%a8%d8%a7%d8%ad": "اشباح",
+            "%d8%a7%d8%b9%d8%a7%d8%af%d8%a9-%d8%a7%d8%ad%d9%8a%d8%a7%d8%a1": "اعادة احياء",
+            "%d8%a7%d9%83%d8%b4%d9%86": "اكشن",
+            "%d8%a7%d9%84%d8%a7%d8%aa": "الات",
+            "%d8%a7%d9%84%d8%ad%d9%8a%d8%a7%d8%a9-%d8%a7%d9%84%d9%85%d8%af%d8%b1%d8%b3%d9%8a%d9%87": "الحياة المدرسيه",
+            "%d8%a7%d9%84%d8%b3%d9%81%d8%b1-%d8%b9%d8%a8%d8%b1-%d8%a7%d9%84%d8%b2%d9%85%d9%86": "السفر عبر الزمن",
+            "%d8%a7%d9%84%d8%b9%d8%a7%d8%a8": "العاب",
+            "%d8%a7%d9%84%d8%b9%d8%a7%d8%a8-%d8%a7%d9%84%d9%83%d8%aa%d8%b1%d9%88%d9%86%d9%8a%d8%a9": "العاب الكترونية",
+            "%d8%a7%d9%84%d8%b9%d8%a7%d8%a8-%d8%aa%d9%82%d9%84%d9%8a%d8%af%d9%8a%d8%a9": "العاب تقليدية",
+            "%d8%a7%d9%84%d8%b9%d8%a7%d8%a8-%d9%81%d9%8a%d8%af%d9%8a%d9%88": "العاب فيديو",
+            "%d8%a7%d9%84%d9%81%d8%aa%d8%a7%d8%a9-%d8%a7%d9%84%d9%88%d8%ad%d8%b4": "الفتاة الوحش",
+            "%d8%a7%d9%84%d9%86%d8%ac%d8%a7%d8%a9": "النجاة",
+            "%d8%a7%d9%84%d9%88%d8%a7%d9%82%d8%b9-%d8%a7%d9%84%d8%a7%d9%81%d8%aa%d8%b1%d8%a7%d8%b6%d9%8a": "الواقع الافتراضي",
+            "%d8%a7%d9%84%d9%8a%d8%a7%d8%aa": "اليات",
+            "%d8%a7%d9%85%d8%b1%d8%a3%d8%a9-%d8%b4%d8%b1%d9%8a%d8%b1%d8%a9": "امرأة شريرة",
+            "%d8%a7%d9%8a%d8%aa%d8%b4%d9%89": "ايتشى",
+            "%d8%a7%d9%8a%d8%b3%d9%83%d8%a7%d9%89": "ايسكاى",
+            "%d8%a7%d9%8a%d8%b4%d9%89": "ايشى",
+            "%d8%a8%d8%a7%d9%84%d8%ba": "بالغ",
+            "%d8%a8%d8%b7%d9%84-%d8%ba%d9%8a%d8%b1-%d8%a7%d8%b9%d8%aa%d9%8a%d8%a7%d8%af%d9%89": "بطل غير اعتيادى",
+            "%d8%a8%d8%b7%d9%84-%d8%ba%d9%8a%d8%b1-%d8%a7%d8%b9%d8%aa%d9%8a%d8%a7%d8%af%d9%8a": "بطل غير اعتيادي",
+            "%d8%a8%d8%b9%d8%af-%d8%a7%d9%84%d9%83%d8%a7%d8%b1%d8%ab%d9%87": "بعد الكارثه",
+            "%d8%aa%d8%a7%d8%b1%d9%8a%d8%ae%d9%89": "تاريخى",
+            "%d8%aa%d8%ac%d8%b3%d9%8a%d8%af": "تجسيد",
+            "detective": "تحري",
+            "%d8%aa%d8%b1%d8%a7%d8%ac%d9%8a%d8%af%d9%8a": "تراجيدي",
+            "%d8%aa%d9%84%d9%88%d9%8a%d9%86-%d8%b1%d8%b3%d9%85": "تلوين رسم",
+            "%d8%aa%d9%84%d9%88%d9%8a%d9%86-%d8%b1%d8%b3%d9%85%d9%8a": "تلوين رسمي",
+            "%d8%aa%d9%84%d9%88%d9%8a%d9%86-%d9%87%d9%88%d8%a7%d8%a9": "تلوين هواة",
+            "%d8%aa%d9%86%d8%a7%d8%b3%d8%ae": "تناسخ",
+            "%d8%aa%d9%86%d8%a7%d9%8a%d8%ae": "تنايخ",
+            "%d8%ab%d8%a3%d8%b1": "ثأر",
+            "%d8%ac%d8%a7%d9%86%d8%ad%d9%88%d9%86": "جانحون",
+            "%d8%ac%d8%b1%d9%8a%d9%85%d8%a9": "جريمة",
+            "%d8%ac%d8%b1%d9%8a%d9%85%d9%87": "جريمه",
+            "%d8%ac%d9%86%d8%af%d8%b1-%d8%a8%d9%86%d8%af%d8%b1": "جندر بندر",
+            "%d8%ac%d9%86%d8%af%d8%b1-%d8%a8%d9%86%d8%af%d8%b1-%d8%ac%d9%86%d8%af%d8%b1-%d8%a8%d9%86%d8%af%d8%b1": "جندر بندر",
+            "%d8%ac%d9%88%d8%b3%d9%89": "جوسى",
+            "%d8%ac%d9%88%d8%b3%d9%8a%d9%87": "جوسيه",
+            "%d8%ad%d8%a7%d8%a6%d8%b2-%d8%b9%d9%84%d9%8a-%d8%ac%d8%a7%d8%a6%d8%b2%d8%a9": "حائز علي جائزة",
+            "%d8%ad%d8%af%d9%8a%d8%ab": "حديث",
+            "%d8%ad%d8%b1%d8%a8%d9%89": "حربى",
+            "%d8%ad%d8%b1%d9%8a%d9%85": "حريم",
+            "%d8%ad%d8%b1%d9%8a%d9%85-%d8%b9%d9%83%d8%b3%d9%89": "حريم عكسى",
+            "%d8%ad%d9%8a%d8%a7%d8%a9-%d9%85%d8%af%d8%b1%d8%b3%d9%8a%d8%a9": "حياة مدرسية",
+            "%d8%ad%d9%8a%d8%a7%d8%a9-%d9%8a%d9%88%d9%85%d9%8a%d8%a9": "حياة يومية",
+            "%d8%ad%d9%8a%d9%88%d8%a7%d9%86%d8%a7%d8%aa": "حيوانات",
+            "%d8%ae%d8%a7%d8%b1%d9%82-%d9%84%d9%84%d8%b7%d8%a8%d9%8a%d8%b9%d9%87": "خارق للطبيعه",
+            "%d8%ae%d9%8a%d8%a7%d9%84": "خيال",
+            "%d8%ae%d9%8a%d8%a7%d9%84-%d8%b9%d9%84%d9%85%d9%89": "خيال علمى",
+            "%d8%af%d8%a7%d8%ae%d9%84-%d8%a7%d9%84%d9%84%d8%b9%d8%a8%d9%87": "داخل اللعبه",
+            "%d8%af%d8%a7%d8%ae%d9%84-%d8%b1%d9%88%d8%a7%d9%8a%d9%87": "داخل روايه",
+            "%d8%af%d8%b1%d8%a7%d9%85%d8%a7": "دراما",
+            "%d8%af%d9%85%d9%88%d9%89": "دموى",
+            "%d8%b1%d8%a7%d8%b4%d8%af": "راشد",
+            "%d8%b1%d8%b9%d8%a8": "رعب",
+            "%d8%b1%d9%88%d8%a7%d9%8a%d9%87": "روايه",
+            "%d8%b1%d9%88%d9%85%d8%a7%d9%86%d8%b3%d9%89": "رومانسى",
+            "%d8%b1%d9%8a%d8%a7%d8%b6%d9%87": "رياضه",
+            "%d8%b1%d9%8a%d8%a7%d8%b6%d9%89": "رياضى",
+            "%d8%b2%d9%85%d9%83%d8%a7%d9%86%d9%89": "زمكانى",
+            "%d8%b2%d9%85%d9%86%d9%83%d8%a7%d9%86%d9%8a": "زمنكاني",
+            "%d8%b2%d9%88%d9%85%d8%a8%d9%8a": "زومبي",
+            "%d8%b3%d8%a7%d9%85%d9%88%d8%b1%d8%a7%d9%8a": "ساموراي",
+            "%d8%b3%d8%a7%d9%85%d9%88%d8%b1%d9%8a": "ساموري",
+            "%d8%b3%d8%ad%d8%b1": "سحر",
+            "%d8%b3%d9%8a%d9%86%d9%8a%d9%86": "سينين",
+            "%d8%b4%d8%b1%d8%b7%d8%a9": "شرطة",
+            "%d8%b4%d8%b1%d9%8a%d8%ad%d8%a9-%d9%85%d9%86-%d8%a7%d9%84%d8%ad%d9%8a%d8%a7%d8%a9": "شريحة من الحياة",
+            "%d8%b4%d8%b1%d9%8a%d8%b1": "شرير",
+            "%d8%b4%d9%88%d8%ac%d9%88": "شوجو",
+            "%d8%b4%d9%88%d9%86%d9%8a%d9%86": "شونين",
+            "%d8%b4%d9%8a%d8%a7%d8%b7%d9%8a%d9%86": "شياطين",
+            "%d8%b4%d9%8a%d9%86%d9%8a%d9%86": "شينين",
+            "%d8%b5%d9%82%d9%84": "صقل",
+            "%d8%b7%d8%a8%d8%ae": "طبخ",
+            "%d8%b7%d8%a8%d9%8a": "طبي",
+            "%d8%b7%d8%b1%d8%af-%d8%a7%d9%84%d8%a7%d8%b1%d9%88%d8%a7%d8%ad-%d8%a7%d9%84%d8%b4%d8%b1%d9%8a%d8%b1%d9%87": "طرد الارواح الشريره",
+            "%d8%b9%d8%a7%d8%a6%d9%84%d9%89": "عائلى",
+            "%d8%b9%d8%a7%d9%84%d9%85-%d9%85%d8%ae%d8%aa%d9%84%d9%81": "عالم مختلف",
+            "%d8%b9%d8%a7%d9%85%d9%84-%d9%85%d9%83%d8%aa%d8%a8%d9%8a": "عامل مكتبي",
+            "%d8%b9%d8%b3%d9%83%d8%b1%d9%8a": "عسكري",
+            "%d8%b9%d9%84%d9%85-%d9%86%d9%81%d8%b3": "علم نفس",
+            "%d8%b9%d9%84%d9%85%d9%89": "علمى",
+            "%d8%b9%d9%86%d9%81": "عنف",
+            "%d8%ba%d9%85%d9%88%d8%b6": "غموض",
+            "%d9%81%d9%86%d8%aa%d8%a7%d8%b2%d9%8a%d8%a7": "فنتازيا",
+            "%d9%81%d9%86%d9%88%d9%86-%d9%82%d8%aa%d8%a7%d9%84%d9%8a%d9%87": "فنون قتاليه",
+            "%d9%81%d9%88%d9%82-%d8%a7%d9%84%d8%b7%d8%a8%d9%8a%d8%b9%d9%87": "فوق الطبيعه",
+            "%d9%82%d9%88%d8%a9-%d8%ae%d8%a7%d8%b1%d9%82%d8%a9": "قوة خارقة",
+            "%d9%83%d8%a7%d8%a6%d9%86%d8%a7%d8%aa-%d9%81%d8%b6%d8%a7%d8%a6%d9%8a%d8%a9": "كائنات فضائية",
+            "%d9%83%d9%84-%d8%a7%d9%84%d8%a7%d8%b9%d9%85%d8%a7%d8%b1": "كل الاعمار",
+            "%d9%83%d9%88%d9%85%d9%8a%d8%af%d9%89": "كوميدى",
+            "comic": "كوميك",
+            "%d9%84%d8%b9%d8%a8%d9%87": "لعبه",
+            "%d9%85%d8%a7-%d8%a8%d8%b9%d8%af-%d9%86%d9%87%d8%a7%d9%8a%d8%a9-%d8%a7%d9%84%d8%b9%d8%a7%d9%84%d9%85": "ما بعد نهاية العالم",
+            "%d9%85%d8%a7%d8%b3%d8%a7%d8%a9": "ماساة",
+            "%d9%85%d8%a7%d9%81%d9%8a%d8%a7": "مافيا",
+            "%d9%85%d8%a7%d9%86%d8%ac%d8%a7": "مانجا",
+            "%d9%85%d8%a7%d9%86%d9%87%d9%88%d8%a7": "مانهوا",
+            "manhua": "مانهوا",
+            "%d9%85%d8%ac%d9%85%d9%88%d8%b9%d8%a9-%d9%82%d8%b5%d8%b5": "مجموعة قصص",
+            "%d9%85%d8%af%d8%b1%d8%b3%d9%87": "مدرسه",
+            "%d9%85%d8%b5%d8%a7%d8%b5%d9%89-%d8%a7%d9%84%d8%af%d9%85%d8%a7%d8%a1": "مصاصى الدماء",
+            "%d9%85%d8%ba%d8%a7%d9%85%d8%b1%d8%a9": "مغامرة",
+            "%d9%85%d9%82%d8%aa%d8%a8%d8%b3%d8%a9": "مقتبسة",
+            "%d9%85%d9%82%d8%b7%d8%b9-%d8%b7%d9%88%d9%84%d9%8a": "مقطع طولي",
+            "%d9%85%d9%88%d8%b1%d9%8a%d9%85": "موريم",
+            "%d9%85%d9%88%d8%b3%d9%8a%d9%82%d9%89": "موسيقى",
+            "%d9%86%d8%a7%d8%b1%d9%8a%d8%ae%d9%89": "ناريخى",
+            "%d9%86%d8%a7%d8%b6%d8%ac": "ناضج",
+            "%d9%86%d8%a8%d8%a7%d9%84%d8%a9": "نبالة",
+            "%d9%86%d8%b8%d8%a7%d9%85": "نظام",
+            "%d9%86%d9%81%d8%b3%d9%89": "نفسى",
+            "%d9%86%d9%8a%d9%86%d8%ac%d8%a7": "نينجا",
+            "%d9%87%d9%88%d8%a7%d9%87": "هواه",
+            "%d9%88%d8%ad%d9%88%d8%b4": "وحوش",
+            "%d9%88%d9%86-%d8%b4%d9%88%d8%aa": "ون شوت",
+            "%d9%88%d9%8a%d8%a8-%d8%aa%d9%88%d9%86": "ويب تون"
         };
     }
 }

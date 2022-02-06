@@ -5,35 +5,29 @@ var rp = require('request-promise');
 var cheerio = require('cheerio');
 
 
-module.exports = class ToonilyCom extends Source  {
+module.exports = class Akumanga extends Source  {
 
     constructor() {
         super();
-        this.baseUrl = 'https://toonily.com';
+        this.baseUrl = 'https://akumanga.com';
         
     }
     getRequestWithHeaders(method,url) {
-        var userAgent = '';
-        var cookie = '';
+        var userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0';
         var hosts = this.baseUrl.replace(/^(https?:|)\/\//, '')
-
-       if(this.cfheaders != null){
-            if(this.cfheaders['User-Agent'] != null){
-                userAgent = this.cfheaders['User-Agent'];
-            }
-            if(this.cfheaders['Cookie'] != null){
-                cookie = this.cfheaders['Cookie'];
-            }
-        }
-        var options = {
-            'method': method,
-            'url': url,
-            'headers': {
-              'Host': hosts,
-              'User-Agent': userAgent,
-              'Cookie': cookie,
-            }
-          };
+               var options = {
+                'method': method,
+                'url': url,
+                'headers': {
+                  'Host': hosts,
+                  'User-Agent': userAgent,
+                  'Referer': this.baseUrl,
+                  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                  'Accept-Language': 'en-us',
+                  'Connection': 'keep-alive',
+                  'X-Requested-With': 'XMLHttpRequest',
+                }
+              };
         return options;
     }
     GetMangaFormDetails(url,popular,page){
@@ -49,17 +43,6 @@ module.exports = class ToonilyCom extends Source  {
         }else {
           sidebar = 'right'
         }
-        var userAgent = '';
-        var cookie = '';
-        
-        if(this.cfheaders != null){
-            if(this.cfheaders['User-Agent'] != null){
-                userAgent = this.cfheaders['User-Agent'];
-            }
-            if(this.cfheaders['Cookie'] != null){
-                cookie = this.cfheaders['Cookie'];
-            }
-        }
         var hosts = this.baseUrl.replace(/^(https?:|)\/\//, '')
         var pages = page - 1
         var options = {
@@ -67,8 +50,7 @@ module.exports = class ToonilyCom extends Source  {
           'url': url,
           'headers': {
             'Host': hosts,
-            'User-Agent': userAgent,
-            'Cookie': cookie,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:94.0) Gecko/20100101 Firefox/94.0',
             'Referer': this.baseUrl,
             'Content-Type': 'application/x-www-form-urlencoded'
           },
@@ -101,10 +83,10 @@ module.exports = class ToonilyCom extends Source  {
         var coverElement = element.find('h3 a').first();
         var url = super.substringAfterFirst('.com', 'https:' + coverElement.attr('href'));
         var name = coverElement.text();
-        var thumbnai = element.find('img').attr('data-src');
+        var thumbnai = element.find('img').attr('src');
         var rank = '0';
-        if (typeof thumbnai === undefined){
-            thumbnai = element.find('img').attr('src');
+        if (typeof thumbnai === "undefined"){
+            thumbnai = element.find('img').attr('data-src');
         }
         var thumbnail =  thumbnai + '?'
         return super.manga(name,url,thumbnail,rank);
@@ -134,25 +116,15 @@ module.exports = class ToonilyCom extends Source  {
         var coverElement = element.find('h3 a').first();
         var url = super.substringAfterFirst('.com', 'https:' + coverElement.attr('href'));
         var name = coverElement.text();
-        var thumbnai = element.find('img').attr('data-src');
+        var thumbnai = element.find('img').attr('src');
         var rank = '0';
-        if (typeof thumbnai === undefined){
-            thumbnai = element.find('img').attr('src');
+        if (typeof thumbnai === "undefined"){
+            thumbnai = element.find('img').attr('data-src');
         }
         var thumbnail =  thumbnai + '?'
         return super.manga(name,url,thumbnail,rank);
     }
-
-    searchMangaNextPageSelector(firstPageHtml){
-        var $ = cheerio.load(firstPageHtml);
-        var nextPage = $('a.nextpostslink');
-        if (nextPage.contents().length !== 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-    
+     
     chapterListSelector() {
         return "li.wp-manga-chapter";
     }
@@ -236,7 +208,7 @@ module.exports = class ToonilyCom extends Source  {
         } else {
             chapterNumber = "?";
         }
-        return super.chapter(url, "English", volumeNumber, chapterNumber, name, date_upload, scanlator);
+        return super.chapter(url, "Arabic", volumeNumber, chapterNumber, name, date_upload, scanlator);
     }
     
      chapterListParse(response, $, seriesURL){
@@ -267,13 +239,22 @@ module.exports = class ToonilyCom extends Source  {
         let titl = $('div.post-title h1')
         titl.find("span").remove()
         let title = titl.text().trim()
-        let thumbnai = $('div.summary_image img').attr('data-src');
+        let thumbnai = $('div.summary_image img').attr('src');
         let author = $('div.author-content').text().trim();
         let artist = $('div.artist-content').text().trim();
-        let status = $('div.post-status div.summary-heading:contains("Status")').next().text().toUpperCase().trim();
+        let status = $('div.post-status div.summary-heading:contains("الحالة")').next().text().trim();
         var genres = [];
-        if (typeof thumbnai === undefined){
-            thumbnai = $('div.summary_image img').attr('src');
+        if (typeof thumbnai === "undefined"){
+            thumbnai = $('div.summary_image img').attr('data-src');
+        }
+        if(status.includes("مستمرة")){
+            status = "ONGOING"
+        }else if(status.includes("مكتملة")){
+            status = "COMPLETED"
+        }else if(status.includes("ألغيت")){
+            status = "CANCELED"
+        }else if(status.includes("في الانتظار")){
+            status = "ON HOLD"
         }
         var thumbnail =  thumbnai + '?'
         $('div.genres-content a').each(function (i, chapterElement){
@@ -291,10 +272,10 @@ module.exports = class ToonilyCom extends Source  {
     
     pageListRequest(chapter) {
         if(chapter.chapter.startsWith('http')){
-            return this.getRequestWithHeaders("GET",chapter.chapter);
+            return chapter.chapter;
         }
         else {
-            return this.getRequestWithHeaders("GET",super.pageListRequest(chapter));
+            return super.pageListRequest(chapter);
         }
     }
     
@@ -305,40 +286,21 @@ module.exports = class ToonilyCom extends Source  {
     }
     
     pageListParse(pageListResponse,chapter){
-        var userAgent = '';
-        var cookie = '';
-        
-       if(this.cfheaders != null){
-            if(this.cfheaders['User-Agent'] != null){
-                userAgent = this.cfheaders['User-Agent'];
-            }
-            if(this.cfheaders['Cookie'] != null){
-                cookie = this.cfheaders['Cookie'];
-            }
-        }
-
         var $ = cheerio.load(pageListResponse);
         var thisReference = this;
         var pages = [];
         $(this.pageListSelector()).each(function (i, pageElement){
              var url = $(pageElement).attr('src');
              if (typeof url === "undefined"){
-                url = $(pageElement).attr('data-src');
+                url = $('div.summary_image img').attr('data-src');
             }
              var headers = {};
-            headers['Referer'] = thisReference.pageListRequest(chapter)['url'];
+            headers['Referer'] = thisReference.pageListRequest(chapter);
             headers['Content-Type'] = 'image/jpeg';
-            headers['Cookie'] = cookie;
-            headers['User-Agent'] = userAgent;
-
             pages.push(thisReference.jsonBrowserifyRequest(url.trim(),null,null,headers,null));
         });
-        console.log('ToonilyCom pages', pages);
-        if(pages.length == 0){
-            return "error - set your cookie";
-        } else {
-            return pages;
-        }
+        console.log('Akumanga pages', pages);
+        return pages;
     }
     
     async fetchPageImage(page){
@@ -365,7 +327,7 @@ module.exports = class ToonilyCom extends Source  {
 
     
     async fetchLatestManga(page){
-        console.log("fetchLatestManga -- ToonilyCom");
+        console.log("fetchLatestManga -- Akumanga");
         var page = parseInt(page);
         
         var currentPageHtml = await this.send_request(this.latestUpdatesRequest(`${page}`));
@@ -379,12 +341,12 @@ module.exports = class ToonilyCom extends Source  {
 
         var json = [];
         $(latestUpdatesSelector).each(function (i, elem) {
-            var mangaUpdate = new ToonilyCom().latestUpdatesFromElement($(this));
+            var mangaUpdate = new Akumanga().latestUpdatesFromElement($(this));
             mangaUpdate.updates = 1;
             json.push(mangaUpdate);
         });
         
-        console.log("ToonilyCom latest -- ", json);
+        console.log("Akumanga latest -- ", json);
         
         var mangasPage = {};
         mangasPage.mangas = json;
@@ -422,12 +384,13 @@ module.exports = class ToonilyCom extends Source  {
             results = results * 1;
         }
         return this.mangasPage(json, hasNextPage, nextPage, results);
-    }  
+    }
+    
     fetchSourceInfo() {
         var sourceInfo = {};
         sourceInfo.requiresLogin = false;
         sourceInfo.url = this.baseUrl;
-        sourceInfo.isCloudFlareSite = true;
+        sourceInfo.isCloudFlareSite = false;
         
         var filters = [];
         
@@ -504,25 +467,23 @@ module.exports = class ToonilyCom extends Source  {
 
         sourceInfo.filters = filters;
         
-        sourceInfo.displayInfo = [];
+        sourceInfo.displayInfo = []; 
         
-        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language",["English"],null));
-        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content",["Manga","Manwha","Manhua","Adult"],["#4D83C1","#4D83C1","#4D83C1","#ff1100"]));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language",["Arabic"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content",["Manga","Manhwa","Manhua"],["#4D83C1","#4D83C1","#4D83C1"]));
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("contributor",["xOnlyFadi"],null));
-        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("note",["Uses Cloudflare"],null));
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("tracker",["No"],[]));
-
-        console.log("ToonilyCom sourceInfo -- ", sourceInfo);
+        console.log("Akumanga sourceInfo -- ", sourceInfo);
         return sourceInfo;
     }
     
     searchMangaRequest(page, query, filters) {
-        console.log("ToonilyCom filters -- ", filters);
+        console.log("Akumanga filters -- ", filters);
         var query = query = query.replace(/_/g,"+");
         if (Object.keys(filters).length === 0) {
             console.log("filters are empty");
             var url = this.getRequestWithHeaders("GET",this.baseUrl + `/page/${page}?s=` + this.normalizeSearchQuery(query) + `&post_type=wp-manga`);
-            console.log("attempting to fetch search request for ToonilyCom - searchUrl is ", url);
+            console.log("attempting to fetch search request for Akumanga - searchUrl is ", url);
             return url;
         }
         else {
@@ -569,7 +530,7 @@ module.exports = class ToonilyCom extends Source  {
             }
             let finsihedur = this.getRequestWithHeaders("GET",url);
 
-            console.log("attempting to fetch search request for ToonilyCom - searchUrl is ", finsihedur);
+            console.log("attempting to fetch search request for Akumanga - searchUrl is ", finsihedur);
             return finsihedur;
         }
     }
@@ -588,8 +549,7 @@ module.exports = class ToonilyCom extends Source  {
         return query;
         
     }
-    
-        
+
     searchMangaParse(page, response, query, filters){
         var page = parseInt(page);
         var searchMangaSelector = this.searchMangaSelector();
@@ -597,18 +557,23 @@ module.exports = class ToonilyCom extends Source  {
         
         var $ = cheerio.load(response);
         $(searchMangaSelector).each(function (i, elem) {
-            json.push(new ToonilyCom().searchMangaFromElement($(this)));
+            json.push(new Akumanga().searchMangaFromElement($(this)));
         });
         
         var page = parseInt(page);
-        var lastPageNumber = this.searchMangaNextPageSelector(response);
-        console.log("lastPageNumber - ",lastPageNumber);
         var mangasPage = {};
         mangasPage.mangas = json;
-        mangasPage.hasNextPage = lastPageNumber;
+        if (query.length === 0){
+            mangasPage.hasNextPage = (json.length >= 12);
+        } else {
+            mangasPage.hasNextPage = (json.length >= 24);
+        }
         mangasPage.nextPage = page + 1;
 
         var results = json.length;
+        if (mangasPage.hasNextPage){
+          results = results * 1;
+        }
         mangasPage.results = results;
         console.log("mangasPage -- ", mangasPage);
         return mangasPage;
@@ -616,52 +581,60 @@ module.exports = class ToonilyCom extends Source  {
     
     getGenresList(){
         return {
-            "action-webtoon": "Action",
-            "adventure-webtoon": "Adventure",
-            "age-gap": "Age Gap",
-            "all-ages": "All Ages",
-            "bdsm": "BDSM",
-            "campus": "Campus",
-            "comedy-webtoon": "Comedy",
-            "crime": "Crime",
-            "drama-webtoon": "Drama",
-            "fantasy-webtoon": "Fantasy",
-            "female-friend": "Female Friend",
-            "gender-bender": "Gender Bender",
-            "gossip": "Gossip",
-            "harem-webtoon": "Harem",
-            "webtoon-historical": "Historical",
-            "horror-webtoon": "Horror",
-            "incest": "Incest",
-            "isekai": "Isekai",
-            "josei-manga": "Josei",
-            "magic": "Magic",
-            "martial-arts": "Martial Arts",
-            "mature-webtoon": "Mature",
-            "mystery-webtoon": "Mystery",
-            "ntr-webtoon": "NTR",
-            "office": "Office",
-            "psychological-webtoon": "Psychological",
-            "rape": "Rape",
-            "reincarnation": "Reincarnation",
-            "revenge": "Revenge",
-            "reverse-harem": "Reverse Harem",
-            "romance-webtoon": "Romance",
-            "school-life-webtoon": "School life",
-            "scifi-webtoon": "Sci-Fi",
-            "secret-relationship": "Secret Relationship",
-            "seinen-webtoon": "Seinen",
-            "shoujo": "Shoujo",
-            "shounen-webtoon": "Shounen",
-            "sliceoflife-webtoon": "Slice of Life",
-            "sports": "Sports",
-            "supernatural-webtoon": "Supernatural",
-            "thriller-webtoon": "Thriller",
-            "tragedy": "Tragedy",
-            "uncensored": "Uncensored",
-            "work-life": "Work Life",
-            "yaoi-webtoon": "Yaoi",
-            "yuri-webtoon": "Yuri",
+            '%d8%a3%d9%83%d8%b4%d9%86': 'أكشن',
+            '%d8%a5%d8%ab%d8%a7%d8%b1%d8%a9': 'إثارة',
+            '%d8%a7%d8%ab%d8%a7%d8%b1%d9%87': 'اثاره',
+            '%d8%a7%d9%83%d8%b4%d9%86': 'اكشن',
+            '%d8%a7%d9%84%d8%ad%d9%8a%d8%a7%d8%a9-%d8%a7%d9%84%d9%85%d8%af%d8%b1%d8%b3%d9%8a%d8%a9': 'الحياة المدرسية',
+            '%d8%a7%d9%84%d8%ad%d9%8a%d8%a7%d8%a9-%d8%a7%d9%84%d9%8a%d9%88%d9%85%d9%8a%d8%a9': 'الحياة اليومية',
+            '%d8%a7%d9%8a%d8%aa%d8%b4%d9%8a': 'ايتشي',
+            '%d8%a7%d9%8a%d8%b3%d9%83%d8%a7%d9%8a': 'ايسكاي',
+            '%d8%aa%d8%a7%d8%b1%d9%8a%d8%ae%d9%8a': 'تاريخي',
+            '%d8%aa%d9%86%d8%a7%d8%b3%d8%ae': 'تناسخ',
+            '%d8%ac%d8%b2%d8%a1-%d9%85%d9%86-%d8%a7%d9%84%d8%ad%d9%8a%d8%a7%d8%a9': 'جزء من الحياة',
+            '%d8%ac%d9%88%d8%b3%d9%8a': 'جوسي',
+            '%d8%ad%d8%b1%d9%8a%d9%85': 'حريم',
+            '%d8%ad%d9%8a%d8%a7%d8%a9-%d9%85%d8%af%d8%b1%d8%b3%d9%8a%d8%a9': 'حياة مدرسية',
+            '%d8%ae%d8%a7%d8%b1%d9%82-%d9%84%d9%84%d8%b7%d8%a8%d9%8a%d8%b9%d8%a9': 'خارق للطبيعة',
+            '%d8%ae%d8%a7%d8%b1%d9%82-%d9%84%d9%84%d8%b7%d8%a8%d9%8a%d8%b9%d9%87': 'خارق للطبيعه',
+            '%d8%ae%d9%8a%d8%a7%d9%84': 'خيال',
+            '%d8%ae%d9%8a%d8%a7%d9%84-%d8%b9%d9%84%d9%85%d9%8a': 'خيال علمي',
+            '%d8%af%d8%b1%d8%a7%d9%85%d8%a7': 'دراما',
+            '%d8%b1%d8%a7%d8%b4%d8%af': 'راشد',
+            '%d8%b1%d8%b9%d8%a8': 'رعب',
+            '%d8%b1%d9%88%d9%85%d8%a7%d9%86%d8%b3%d9%89': 'رومانسى',
+            '%d8%b1%d9%88%d9%85%d8%a7%d9%86%d8%b3%d9%8a': 'رومانسي',
+            '%d8%b1%d9%8a%d8%a7%d8%b6%d9%8a': 'رياضي',
+            '%d8%b2%d9%85%d9%83%d8%a7%d9%86%d9%89': 'زمكانى',
+            '%d8%b2%d9%85%d9%83%d8%a7%d9%86%d9%8a': 'زمكاني',
+            '%d8%b2%d9%88%d9%85%d8%a8%d9%8a': 'زومبي',
+            '%d8%b3%d8%ad%d8%b1': 'سحر',
+            '%d8%b3%d9%8a%d9%86%d9%8a%d9%86': 'سينين',
+            '%d8%b4%d8%b1%d9%8a%d8%ad%d8%a9-%d9%85%d9%86-%d8%a7%d9%84%d8%ad%d9%8a%d8%a7%d8%a9': 'شريحة من الحياة',
+            '%d8%b4%d9%88%d8%ac%d9%88': 'شوجو',
+            '%d8%b4%d9%88%d9%86%d9%8a%d9%86': 'شونين',
+            '%d8%b4%d9%8a%d8%a7%d8%b7%d9%8a%d9%86': 'شياطين',
+            '%d8%b7%d8%a8%d8%ae': 'طبخ',
+            '%d8%b9%d8%b3%d9%83%d8%b1%d9%8a': 'عسكري',
+            '%d8%ba%d9%85%d9%88%d8%b6': 'غموض',
+            '%d9%81%d9%86%d9%88%d9%86-%d9%82%d8%aa%d8%a7%d9%84%d9%8a%d8%a9': 'فنون قتالية',
+            '%d9%81%d9%86%d9%88%d9%86-%d9%82%d8%aa%d8%a7%d9%84%d9%8a%d9%87': 'فنون قتاليه',
+            '%d9%82%d9%88%d8%a9-%d8%ae%d8%a7%d8%b1%d9%82%d8%a9': 'قوة خارقة',
+            '%d9%83%d9%88%d9%85%d9%8a%d8%af%d9%89': 'كوميدى',
+            '%d9%83%d9%88%d9%85%d9%8a%d8%af%d9%8a': 'كوميدي',
+            '%d9%83%d9%88%d9%85%d9%8a%d8%af%d9%8a%d8%a7': 'كوميديا',
+            '%d9%84%d8%b9%d8%a8%d8%a9': 'لعبة',
+            '%d9%85%d8%a3%d8%b3%d8%a7%d8%a9': 'مأساة',
+            '%d9%85%d8%a7%d9%86%d9%87%d8%a7': 'مانها',
+            '%d9%85%d8%a7%d9%86%d9%87%d9%88%d8%a7': 'مانهوا',
+            '%d9%85%d8%a7%d9%86%d9%87%d9%88%d8%a7-%d9%83%d9%88%d8%b1%d9%8a%d8%a9': 'مانهوا كورية',
+            '%d9%85%d8%ba%d8%a7%d9%85%d8%b1%d8%a7%d8%aa': 'مغامرات',
+            '%d9%85%d8%ba%d8%a7%d9%85%d8%b1%d8%a9': 'مغامرة',
+            '%d9%86%d9%81%d8%b3%d9%8a': 'نفسي',
+            '%d9%88%d8%ad%d9%88%d8%b4': 'وحوش',
+            '%d9%88%d9%8a%d8%a8-%d8%aa%d9%88%d9%86%d8%b2': 'ويب تونز',
+            '%d9%88%d9%8a%d8%a8%d8%aa%d9%88%d9%86': 'ويبتون',
+            '%d9%8a%d9%88%d8%b1%d9%8a-%d8%ae%d9%81%d9%8a%d9%81': 'يوري خفيف'
         };
     }
 }

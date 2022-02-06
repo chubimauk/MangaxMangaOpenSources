@@ -5,11 +5,11 @@ const $ = require('cheerio');
 var source = require('./source.js');
 var sources = {}; 
 
-var isekaiscan = require('./isekaiscan.js');
-var currentSources = {'isekaiscan': {version: '1.0', location: 'default'}}; 
+var mangalek = require('./mangalek.js');
+var currentSources = {'mangalek': {version: '1.0', location: 'default'}}; 
 
 function loadDefaultSourcesShippedWithApp() {
-    sources['isekaiscan'] = new (isekaiscan);
+    sources['mangalek'] = new (mangalek);
 }
 
 loadDefaultSourcesShippedWithApp();
@@ -268,7 +268,7 @@ function pageListRequest(source/*:String*/,chapterURL/*:String*/,chapterNumber/*
 }
 
 function pageListParse(source/*:String*/,response/*:response*/,chapterURL/*:String*/,chapterNumber/*:String*/,seriesURL/*:String*//*, invisible jsonChainedResponse.responseData ONLY*/){ //-> [JSONPage]
-    //necessary for isekaiscan
+    //necessary for mangalek
     var chapter = {
         series: seriesURL,
         chapter: chapterURL,
@@ -290,7 +290,7 @@ function pageListParse(source/*:String*/,response/*:response*/,chapterURL/*:Stri
 //for use by browserify
 function getAvailableSources(){
     var sources = [];
-    sources.push({"name":"isekaiscan","version":1.0,"defaultUnlocked":true,"unlockKey":null});
+    sources.push({"name":"mangalek","version":1.0,"defaultUnlocked":true,"unlockKey":null});
     return JSON.stringify(sources);
 }
 

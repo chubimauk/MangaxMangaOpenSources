@@ -4,93 +4,26 @@ const Source = require('./source.js');
 var rp = require('request-promise');
 var cheerio = require('cheerio');
 
-
-module.exports = class ToonilyCom extends Source  {
+module.exports = class AsuraScans extends Source  {
 
     constructor() {
         super();
-        this.baseUrl = 'https://toonily.com';
-        
+        this.baseUrl = 'https://www.asurascans.com';
     }
-    getRequestWithHeaders(method,url) {
-        var userAgent = '';
-        var cookie = '';
-        var hosts = this.baseUrl.replace(/^(https?:|)\/\//, '')
 
-       if(this.cfheaders != null){
-            if(this.cfheaders['User-Agent'] != null){
-                userAgent = this.cfheaders['User-Agent'];
-            }
-            if(this.cfheaders['Cookie'] != null){
-                cookie = this.cfheaders['Cookie'];
-            }
-        }
-        var options = {
-            'method': method,
-            'url': url,
-            'headers': {
-              'Host': hosts,
-              'User-Agent': userAgent,
-              'Cookie': cookie,
-            }
-          };
+    getRequestWithHeaders(url) {
+        var userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:95.0) Gecko/20100101 Firefox/95.0';
+        
+        const options = {
+                   url: url,
+               headers: {
+                   'User-Agent': userAgent
+               }
+               };
         return options;
     }
-    GetMangaFormDetails(url,popular,page){
-        var meta_key = ''
-        var sidebar = ''
-        if(popular){
-          meta_key = '_wp_manga_views'
-        }else {
-          meta_key = '_latest_update'
-        }
-        if(popular){
-          sidebar = 'full'
-        }else {
-          sidebar = 'right'
-        }
-        var userAgent = '';
-        var cookie = '';
-        
-        if(this.cfheaders != null){
-            if(this.cfheaders['User-Agent'] != null){
-                userAgent = this.cfheaders['User-Agent'];
-            }
-            if(this.cfheaders['Cookie'] != null){
-                cookie = this.cfheaders['Cookie'];
-            }
-        }
-        var hosts = this.baseUrl.replace(/^(https?:|)\/\//, '')
-        var pages = page - 1
-        var options = {
-          'method': 'POST',
-          'url': url,
-          'headers': {
-            'Host': hosts,
-            'User-Agent': userAgent,
-            'Cookie': cookie,
-            'Referer': this.baseUrl,
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          form: {
-            'action': 'madara_load_more',
-            'page': pages,
-            'template': 'madara-core/content/content-archive',
-            'vars[orderby]': 'meta_value_num',
-            'vars[paged]': '1',
-            'vars[posts_per_page]': '20',
-            'vars[post_type]': 'wp-manga',
-            'vars[post_status]': 'publish',
-            'vars[meta_key]': meta_key,
-            'vars[order]': 'desc',
-            'vars[sidebar]': sidebar,
-            'vars[manga_archives_item_layout]': 'big_thumbnail'
-          }
-        };
-        return options
-      }
     searchMangaSelector() {
-        return 'div.c-tabs-item__content';
+        return this.popularMangaSelector();
     }
     
     searchMangaFromElement(element) {
@@ -98,20 +31,24 @@ module.exports = class ToonilyCom extends Source  {
     }
     
     mangaFromElement(element){
-        var coverElement = element.find('h3 a').first();
+        var coverElement = element.find('a').first();
         var url = super.substringAfterFirst('.com', 'https:' + coverElement.attr('href'));
-        var name = coverElement.text();
-        var thumbnai = element.find('img').attr('data-src');
+        var name = coverElement.attr('title')
+        var thumbnai = element.find('div.limit img').first().attr('src');
         var rank = '0';
-        if (typeof thumbnai === undefined){
-            thumbnai = element.find('img').attr('src');
+        if (typeof thumbnai === "undefined"){
+            thumbnai = element.find('div.limit img').attr('data-src');
+        }
+        if (typeof thumbnai === "undefined"){
+            thumbnai = element.find('div.limit img').attr('datacf-src');
         }
         var thumbnail =  thumbnai + '?'
+        var rank = '0';
         return super.manga(name,url,thumbnail,rank);
     }
     
     latestUpdatesRequest(page) {
-        return this.GetMangaFormDetails(`${this.baseUrl}/wp-admin/admin-ajax.php`,false,page); //headers?
+        return this.getRequestWithHeaders(`${this.baseUrl}/manga/?page=${page}&order=update`)
     }
     
     latestUpdatesSelector() {
@@ -119,72 +56,76 @@ module.exports = class ToonilyCom extends Source  {
     }
     
     latestUpdatesFromElement(element) {
-        return this.popularMangaFromElement(element)
+        var x = this.mangaFromElement(element);
+        console.log("lastestMange -- ",x);
+        return x;
     }
+    
     popularMangaRequest(page) {
-        return this.GetMangaFormDetails(`${this.baseUrl}/wp-admin/admin-ajax.php`,true,page); //headers?
+        return this.getRequestWithHeaders(`${this.baseUrl}/manga/?page=${page}&order=popular`)
     }
     
     popularMangaSelector() {
-        return 'div.col-6';
+        return 'div.bs';
     }
     
     popularMangaFromElement(element) {
-        console.log(element)
-        var coverElement = element.find('h3 a').first();
-        var url = super.substringAfterFirst('.com', 'https:' + coverElement.attr('href'));
-        var name = coverElement.text();
-        var thumbnai = element.find('img').attr('data-src');
-        var rank = '0';
-        if (typeof thumbnai === undefined){
-            thumbnai = element.find('img').attr('src');
-        }
-        var thumbnail =  thumbnai + '?'
-        return super.manga(name,url,thumbnail,rank);
+        return this.mangaFromElement(element);
     }
 
-    searchMangaNextPageSelector(firstPageHtml){
+    getLastPageNumber(firstPageHtml,page){
         var $ = cheerio.load(firstPageHtml);
-        var nextPage = $('a.nextpostslink');
-        if (nextPage.contents().length !== 0) {
-            return true;
+        var lastPageHREFText = $('.hpage a.r').attr('href');
+        if (lastPageHREFText === undefined) {
+            return parseInt(page);
         } else {
-            return false;
+        var lastNumbersOnly = lastPageHREFText.match(/\d/g);
+        var lastNumber = 0;
+        if (lastNumbersOnly != null && lastNumbersOnly.length > 0){
+            lastNumber = lastNumbersOnly.join('');
+        }
+        return parseInt(lastNumber);
         }
     }
-    
+
     chapterListSelector() {
-        return "li.wp-manga-chapter";
+        return "div.bxcl ul li, div.cl ul li, ul li:has(div.chbox):has(div.eph-num)";
     }
-    
-    
-    
+      
     chapterListRequest(seriesURL) {
         if(seriesURL.startsWith('http')){
-            return this.getRequestWithHeaders("GET",seriesURL);
+            return this.getRequestWithHeaders(seriesURL);
         }
         else {
-            return this.getRequestWithHeaders("GET",super.chapterListRequest(seriesURL));
+            return this.getRequestWithHeaders(super.chapterListRequest(seriesURL));
         }
     }
     
     mangaDetailsRequest(seriesURL) {
         if(seriesURL.startsWith('http')){
-            return this.getRequestWithHeaders("GET",seriesURL);
+            return this.getRequestWithHeaders(seriesURL);
         }
         else {
-            return this.getRequestWithHeaders("GET",super.mangaDetailsRequest(seriesURL));
+            return this.getRequestWithHeaders(super.mangaDetailsRequest(seriesURL));
         }
     }
     
     chapterFromElement(chapterElement, source){
         var $ = cheerio.load(chapterElement);
         
-        var chapterAElement = $('a');
+        var chapterAElement = $('.lchx > a, span.leftoff a, div.eph-num > a');
         var url = super.substringAfterFirst(this.baseUrl, chapterAElement.attr('href'));
-        var name = chapterAElement.text().trim();
+        var name = ''
+        if (!super.isEmpty($("span.chapternum",chapterAElement))){
+            console.log("Not Empty")
+            name = $("span.chapternum",chapterAElement).text()
+        } else {
+            console.log("Empty")
+            name = chapterAElement.text().trim();
+        }
         var scanlator = "";
-        var date_upload = $('span').last().text().trim();
+        var date_upload = $('span.rightoff, time, span.chapterdate').first().text();
+
         var volumeNumber = '';
         var chapterNumber = '';
         const regex = RegExp(/\b\d+\.?\d?\b/g);
@@ -236,6 +177,8 @@ module.exports = class ToonilyCom extends Source  {
         } else {
             chapterNumber = "?";
         }
+        
+        
         return super.chapter(url, "English", volumeNumber, chapterNumber, name, date_upload, scanlator);
     }
     
@@ -246,8 +189,7 @@ module.exports = class ToonilyCom extends Source  {
          }
          console.log("chapterListParse loaded into cheerio");
         var thisReference = this;
-        var chapters = [];
-         
+        var chapters = [];       
          
          $(this.chapterListSelector()).each(function (i, chapterElement){
              var chapter = thisReference.chapterFromElement(chapterElement);
@@ -264,40 +206,41 @@ module.exports = class ToonilyCom extends Source  {
             $ = cheerio.load(response);
         }
         console.log("mangaDetailsParse loaded into cheerio");
-        let titl = $('div.post-title h1')
-        titl.find("span").remove()
-        let title = titl.text().trim()
-        let thumbnai = $('div.summary_image img').attr('data-src');
-        let author = $('div.author-content').text().trim();
-        let artist = $('div.artist-content').text().trim();
-        let status = $('div.post-status div.summary-heading:contains("Status")').next().text().toUpperCase().trim();
-        var genres = [];
-        if (typeof thumbnai === undefined){
-            thumbnai = $('div.summary_image img').attr('src');
+        let infoEle = $('div.bigcontent, div.animefull, div.main-info');
+        let title = $('div.infox h1',infoEle).text()
+        let thumbnai = $('div.thumb img',infoEle).attr('src');
+        let author = $('span:contains(Author:), span:contains(Pengarang:), .fmed b:contains(Author)+span, .imptdt:contains(Author) i',infoEle).text().trim();
+        let artist = $('.fmed b:contains(Artist)+span, .imptdt:contains(Artist) i',infoEle).text().trim();
+        let status = $('span:contains(Status:), .imptdt:contains(Status) i',infoEle).text().toUpperCase().trim();
+        var genres = [$('span:contains(Type) a, .imptdt:contains(Type) a, a[href*="type\="], .infotable tr:contains(Type) td:last-child').text()];
+        if (typeof thumbnai === "undefined"){
+            thumbnai = $('div.thumb img',infoEle).attr('data-src');
+        }
+        if (typeof thumbnai === "undefined"){
+            thumbnai = $('div.thumb img',infoEle).attr('datacf-src');
         }
         var thumbnail =  thumbnai + '?'
-        $('div.genres-content a').each(function (i, chapterElement){
+        $('span:contains(Genre) a, .mgen a',infoEle).each(function (i, chapterElement){
             var gen = $(chapterElement).text();
             genres.push(gen);
         });
-        let description = $('div.description-summary div.summary__content').text().trim();
+        let description = $('div.desc p, div.entry-content p, div[itemprop="description"]',infoEle).text().trim();
         console.log('finishedMangaDetails parse');
         return this.mangaDetails(title, thumbnail, description, author, artist, status, genres);
     }
     
     pageListSelector() {
-        return "div.page-break img";
+        return "div#readerarea img";
     }
     
     pageListRequest(chapter) {
         if(chapter.chapter.startsWith('http')){
-            return this.getRequestWithHeaders("GET",chapter.chapter);
+            return this.getRequestWithHeaders(chapter.chapter);
         }
         else {
-            return this.getRequestWithHeaders("GET",super.pageListRequest(chapter));
+            return this.getRequestWithHeaders(super.pageListRequest(chapter));
         }
     }
-    
     
     async fetchPageList(chapter){
         var pageListResponse = await this.send_request(this.pageListRequest(chapter));
@@ -305,40 +248,25 @@ module.exports = class ToonilyCom extends Source  {
     }
     
     pageListParse(pageListResponse,chapter){
-        var userAgent = '';
-        var cookie = '';
-        
-       if(this.cfheaders != null){
-            if(this.cfheaders['User-Agent'] != null){
-                userAgent = this.cfheaders['User-Agent'];
-            }
-            if(this.cfheaders['Cookie'] != null){
-                cookie = this.cfheaders['Cookie'];
-            }
-        }
-
         var $ = cheerio.load(pageListResponse);
         var thisReference = this;
         var pages = [];
+        $('div[class="asurascans.rights"]').remove()
         $(this.pageListSelector()).each(function (i, pageElement){
              var url = $(pageElement).attr('src');
              if (typeof url === "undefined"){
                 url = $(pageElement).attr('data-src');
             }
-             var headers = {};
-            headers['Referer'] = thisReference.pageListRequest(chapter)['url'];
+            if (typeof url === "undefined"){
+                url = $(pageElement).attr('datacf-src');
+            }
+            var headers = {};
+            headers['Referer'] = thisReference.pageListRequest(chapter);
             headers['Content-Type'] = 'image/jpeg';
-            headers['Cookie'] = cookie;
-            headers['User-Agent'] = userAgent;
-
             pages.push(thisReference.jsonBrowserifyRequest(url.trim(),null,null,headers,null));
         });
-        console.log('ToonilyCom pages', pages);
-        if(pages.length == 0){
-            return "error - set your cookie";
-        } else {
-            return pages;
-        }
+        console.log('AsuraScans pages', pages);
+        return pages;  
     }
     
     async fetchPageImage(page){
@@ -365,7 +293,7 @@ module.exports = class ToonilyCom extends Source  {
 
     
     async fetchLatestManga(page){
-        console.log("fetchLatestManga -- ToonilyCom");
+        console.log("fetchLatestManga -- AsuraScans");
         var page = parseInt(page);
         
         var currentPageHtml = await this.send_request(this.latestUpdatesRequest(`${page}`));
@@ -375,33 +303,34 @@ module.exports = class ToonilyCom extends Source  {
     latestUpdatesParse(page, response){
         var page = parseInt(page);
         var latestUpdatesSelector = this.latestUpdatesSelector();
+        
         var $ = cheerio.load(response);
-
+        
         var json = [];
         $(latestUpdatesSelector).each(function (i, elem) {
-            var mangaUpdate = new ToonilyCom().latestUpdatesFromElement($(this));
+            var mangaUpdate = new AsuraScans().latestUpdatesFromElement($(this));
             mangaUpdate.updates = 1;
             json.push(mangaUpdate);
         });
         
-        console.log("ToonilyCom latest -- ", json);
+        console.log("mangenlo latest -- ", json);
         
         var mangasPage = {};
         mangasPage.mangas = json;
         
         
-        var hasNextPage = (json.length >= 20);
+        var lastPageNumber = this.getLastPageNumber(response,page);
+        var hasNextPage = lastPageNumber > page;
         var nextPage = page + 1;
         
-  
         var results = json.length;
-        if (hasNextPage){
-          results = results * 1;
+        if (lastPageNumber != null && lastPageNumber > 0){
+            results = results * lastPageNumber;
         }
         
         return super.mangasPage(json, hasNextPage, nextPage, results);
     }
-        
+    
     popularMangaParse(page, response){
         var page = parseInt(page);
         var $ = cheerio.load(response);
@@ -414,20 +343,21 @@ module.exports = class ToonilyCom extends Source  {
             json.push(thisReference.popularMangaFromElement($(this)));
         });
         
-        var hasNextPage = (json.length >= 20);
+        var lastPageNumber = this.getLastPageNumber(response,page);
+        var hasNextPage = lastPageNumber > page;
         var nextPage = page + 1;
         var results = json.length;
         
-        if (hasNextPage){
-            results = results * 1;
+        if (lastPageNumber != null && lastPageNumber > 0){
+            results = results * lastPageNumber;
         }
         return this.mangasPage(json, hasNextPage, nextPage, results);
-    }  
+    }
     fetchSourceInfo() {
         var sourceInfo = {};
         sourceInfo.requiresLogin = false;
         sourceInfo.url = this.baseUrl;
-        sourceInfo.isCloudFlareSite = true;
+        sourceInfo.isCloudFlareSite = false;
         
         var filters = [];
         
@@ -436,56 +366,48 @@ module.exports = class ToonilyCom extends Source  {
         AuthorFilter.displayName = 'Author';
         AuthorFilter.type = 'text';
 
-        var ArtistFilter = {}; 
-        ArtistFilter.paramKey = 'artist';
-        ArtistFilter.displayName = 'Artist';
-        ArtistFilter.type = 'text';
-
         var YearsRelFilter = {}; 
         YearsRelFilter.paramKey = 'release';
-        YearsRelFilter.displayName = 'Year of Released';
+        YearsRelFilter.displayName = 'Year';
         YearsRelFilter.type = 'text';
+
+        var sortFilter = {};
+        sortFilter.paramKey = 'sort';
+        sortFilter.displayName = 'Sort By';
+        sortFilter.type = 'sort';
+        sortFilter.options = {};
+        sortFilter.options[''] = 'Default';
+        sortFilter.options['title'] = 'A-Z';
+        sortFilter.options['titlereverse'] = 'Z-A';
+        sortFilter.options['update'] = 'Latest Update';
+        sortFilter.options['latest'] = 'Latest Added';
+        sortFilter.options['popular'] = 'Popular';
+        sortFilter.default = '';
 
         var statusFilter = {};
         statusFilter.paramKey = 'status';
         statusFilter.displayName = 'Status';
         statusFilter.type = 'choice';
         statusFilter.options = {};
-        statusFilter.options['end'] = 'Completed';
-        statusFilter.options['on-going'] = 'OnGoing';
-        statusFilter.options['canceled'] = 'Canceled';
-        statusFilter.options['on-hold'] = 'On Hold';
+        statusFilter.options[''] = 'All';
+        statusFilter.options['ongoing'] = 'Ongoing';
+        statusFilter.options['completed'] = 'Completed';
+        statusFilter.options['hiatus'] = 'Hiatus';
+        statusFilter.options['dropped'] = 'Dropped';
+        statusFilter.options['coming+soon'] = 'Coming Soon';
+        statusFilter.default = '';
 
-        var sortFilter = {};
-        sortFilter.paramKey = 'sort';
-        sortFilter.displayName = 'Order By';
-        sortFilter.type = 'sort';
-        sortFilter.options = {};
-        sortFilter.options['latest'] = 'Latest';
-        sortFilter.options['views'] = 'Most View';
-        sortFilter.options['trending'] = 'Treding';
-        sortFilter.options['new-manga'] = 'New';
-        sortFilter.options['rating'] = 'Rating';
-        sortFilter.options['alphabet'] = 'A-Z';
-
-        var AdultconFilter = {};
-        AdultconFilter.paramKey = 'adultcon';
-        AdultconFilter.displayName = 'Adult Content';
-        AdultconFilter.type = 'choice';
-        AdultconFilter.options = {};
-        AdultconFilter.options[''] = 'All';
-        AdultconFilter.options['0'] = 'None';
-        AdultconFilter.options['1'] = 'Only';
-        AdultconFilter.default = '';
-
-        var GenreConFilter = {};
-        GenreConFilter.paramKey = 'gencon';
-        GenreConFilter.displayName = 'Genre condition';
-        GenreConFilter.type = 'choice';
-        GenreConFilter.options = {};
-        GenreConFilter.options[''] = 'or';
-        GenreConFilter.options['0'] = 'and';
-        GenreConFilter.default = '';
+        var TypeFFilter = {};
+        TypeFFilter.paramKey = 'wptype';
+        TypeFFilter.displayName = 'Type';
+        TypeFFilter.type = 'choice';
+        TypeFFilter.options = {};
+        TypeFFilter.options[''] = 'Default';
+        TypeFFilter.options['manga'] = 'Manga';
+        TypeFFilter.options['manhwa'] = 'Manhwa';
+        TypeFFilter.options['manhua'] = 'Manhua';
+        TypeFFilter.options['comic'] = 'Comic';
+        TypeFFilter.default = '';
 
         var GeneresLISTS = {};
         GeneresLISTS.paramKey = 'genres';
@@ -494,24 +416,20 @@ module.exports = class ToonilyCom extends Source  {
         GeneresLISTS.options = this.getGenresList();
 
         filters.push(AuthorFilter);
-        filters.push(ArtistFilter);
         filters.push(YearsRelFilter);
-        filters.push(statusFilter);
         filters.push(sortFilter);
-        filters.push(AdultconFilter);
-        filters.push(GenreConFilter);
+        filters.push(statusFilter);
+        filters.push(TypeFFilter);
         filters.push(GeneresLISTS);
 
         sourceInfo.filters = filters;
-        
         sourceInfo.displayInfo = [];
         
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language",["English"],null));
-        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content",["Manga","Manwha","Manhua","Adult"],["#4D83C1","#4D83C1","#4D83C1","#ff1100"]));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content",["Manwha","Manhua"],["#4D83C1","#4D83C1"]));
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("contributor",["xOnlyFadi"],null));
-        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("note",["Uses Cloudflare"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("note",["High Quality Scans"],null));
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("tracker",["No"],[]));
-
         console.log("ToonilyCom sourceInfo -- ", sourceInfo);
         return sourceInfo;
     }
@@ -521,43 +439,37 @@ module.exports = class ToonilyCom extends Source  {
         var query = query = query.replace(/_/g,"+");
         if (Object.keys(filters).length === 0) {
             console.log("filters are empty");
-            var url = this.getRequestWithHeaders("GET",this.baseUrl + `/page/${page}?s=` + this.normalizeSearchQuery(query) + `&post_type=wp-manga`);
+            var url = this.getRequestWithHeaders(this.baseUrl + `/manga/?title=` + this.normalizeSearchQuery(query) + `&page=${page}`);
             console.log("attempting to fetch search request for ToonilyCom - searchUrl is ", url);
             return url;
         }
         else {
             console.log("filters has properties");
             var query = query = query.replace(/_/g,"+");
-            var url = `${this.baseUrl}/page/${page}`;
+            var url = `${this.baseUrl}/manga/`;
             if (!super.isEmpty(query)){
-                url = super.addQueryParameter(url, "s", this.normalizeSearchQuery(query) + "&post_type=wp-manga", true);
+                url = super.addQueryParameter(url, "title", this.normalizeSearchQuery(query) + `&page=${page}`, true);
             } else {
-                url = super.addQueryParameter(url, "s", "&post_type=wp-manga", true);
+                url = super.addQueryParameter(url, "title", `&page=${page}`, true);
             }
 
             for(var i=0; i<filters.length; i++){
                 switch(filters[i].key) {
                   case "author":
                         url = super.addQueryParameter(url, "author", filters[i].value, false);
-                        break;
-                  case "artist":
-                        url = super.addQueryParameter(url, "artist", filters[i].value, false);
-                        break;                  
+                        break;                 
                   case "release":
-                        url = super.addQueryParameter(url, "release", filters[i].value, false);
+                        url = super.addQueryParameter(url, "yearx", filters[i].value, false);
                         break;                  
                   case "status":
-                        url = super.addQueryParameter(url, "status[]", filters[i].value, false);
-                        break;                  
-                  case "sort":
-                        url = super.addQueryParameter(url, "m_orderby", filters[i].value, false);
-                        break;                  
-                  case "adultcon":
-                        url = super.addQueryParameter(url, "adult", filters[i].value, false);
-                        break;                  
-                  case "gencon":
-                        url = super.addQueryParameter(url, "op", filters[i].value, false);
+                        url = super.addQueryParameter(url, "status", filters[i].value, false);
                         break;
+                  case "wptype":
+                        url = super.addQueryParameter(url, "type", filters[i].value, false);
+                        break;                   
+                  case "sort":
+                        url = super.addQueryParameter(url, "order", filters[i].value, false);
+                        break;                                   
                   case "genres":
                         let filtes = encodeURI(filters[i].value)
                         let bois = filtes.replace(/,/g,"&genre[]=")
@@ -567,10 +479,8 @@ module.exports = class ToonilyCom extends Source  {
                     break;
                 }
             }
-            let finsihedur = this.getRequestWithHeaders("GET",url);
-
-            console.log("attempting to fetch search request for ToonilyCom - searchUrl is ", finsihedur);
-            return finsihedur;
+            console.log("attempting to fetch search request for ToonilyCom - searchUrl is ", url);
+            return this.getRequestWithHeaders(url);
         }
     }
     
@@ -583,12 +493,11 @@ module.exports = class ToonilyCom extends Source  {
         query = query.replace(/[ùúụủũưừứựửữ]+/g, "u");
         query = query.replace(/[ỳýỵỷỹ]+/g, "y");
         query = query.replace(/[đ]+/g, "d");
-        query = query.replace(/ /g,"_");
-        query = query.replace(/%20/g, "_");
+        query = query.replace(/ /g,"+");
+        query = query.replace(/%20/g, "+");
         return query;
         
     }
-    
         
     searchMangaParse(page, response, query, filters){
         var page = parseInt(page);
@@ -597,18 +506,21 @@ module.exports = class ToonilyCom extends Source  {
         
         var $ = cheerio.load(response);
         $(searchMangaSelector).each(function (i, elem) {
-            json.push(new ToonilyCom().searchMangaFromElement($(this)));
+            json.push(new AsuraScans().searchMangaFromElement($(this)));
         });
         
         var page = parseInt(page);
-        var lastPageNumber = this.searchMangaNextPageSelector(response);
+        var lastPageNumber = this.getLastPageNumber(response,page);
         console.log("lastPageNumber - ",lastPageNumber);
         var mangasPage = {};
         mangasPage.mangas = json;
-        mangasPage.hasNextPage = lastPageNumber;
+        mangasPage.hasNextPage = lastPageNumber > page;
         mangasPage.nextPage = page + 1;
 
         var results = json.length;
+        if (lastPageNumber != null && lastPageNumber > 0){
+            results = results * lastPageNumber;
+        }
         mangasPage.results = results;
         console.log("mangasPage -- ", mangasPage);
         return mangasPage;
@@ -616,52 +528,70 @@ module.exports = class ToonilyCom extends Source  {
     
     getGenresList(){
         return {
-            "action-webtoon": "Action",
-            "adventure-webtoon": "Adventure",
-            "age-gap": "Age Gap",
-            "all-ages": "All Ages",
-            "bdsm": "BDSM",
-            "campus": "Campus",
-            "comedy-webtoon": "Comedy",
-            "crime": "Crime",
-            "drama-webtoon": "Drama",
-            "fantasy-webtoon": "Fantasy",
-            "female-friend": "Female Friend",
-            "gender-bender": "Gender Bender",
-            "gossip": "Gossip",
-            "harem-webtoon": "Harem",
-            "webtoon-historical": "Historical",
-            "horror-webtoon": "Horror",
-            "incest": "Incest",
+            "action": "Action",
+            "adaptation": "Adaptation",
+            "adult": "Adult",
+            "adventure": "Adventure",
+            "apocalypse": "apocalypse",
+            "comedy": "Comedy",
+            "coming-soon": "Coming Soon",
+            "cultivation": "Cultivation",
+            "demon": "Demon",
+            "discord": "Discord",
+            "drama": "Drama",
+            "dungeons": "Dungeons",
+            "ecchi": "Ecchi",
+            "fantasy": "Fantasy",
+            "game": "Game",
+            "genius": "Genius",
+            "harem": "Harem",
+            "hero": "Hero",
+            "historical": "Historical",
             "isekai": "Isekai",
-            "josei-manga": "Josei",
+            "josei": "Josei",
+            "kool-kids": "Kool Kids",
+            "loli": "Loli",
             "magic": "Magic",
             "martial-arts": "Martial Arts",
-            "mature-webtoon": "Mature",
-            "mystery-webtoon": "Mystery",
-            "ntr-webtoon": "NTR",
-            "office": "Office",
-            "psychological-webtoon": "Psychological",
-            "rape": "Rape",
+            "mature": "Mature",
+            "mecha": "Mecha",
+            "modern-setting": "Modern Setting",
+            "monsters": "Monsters",
+            "murim": "Murim",
+            "mystery": "Mystery",
+            "necromancer": "Necromancer",
+            "overpowered": "Overpowered",
+            "pets": "Pets",
+            "post-apocalyptic": "Post-Apocalyptic",
+            "psychological": "Psychological",
+            "rebirth": "Rebirth",
             "reincarnation": "Reincarnation",
+            "return": "Return",
+            "returner": "Returner",
             "revenge": "Revenge",
-            "reverse-harem": "Reverse Harem",
-            "romance-webtoon": "Romance",
-            "school-life-webtoon": "School life",
-            "scifi-webtoon": "Sci-Fi",
-            "secret-relationship": "Secret Relationship",
-            "seinen-webtoon": "Seinen",
+            "romance": "Romance",
+            "school-life": "School Life",
+            "sci-fi": "Sci-fi",
+            "seinen": "Seinen",
             "shoujo": "Shoujo",
-            "shounen-webtoon": "Shounen",
-            "sliceoflife-webtoon": "Slice of Life",
-            "sports": "Sports",
-            "supernatural-webtoon": "Supernatural",
-            "thriller-webtoon": "Thriller",
+            "shounen": "Shounen",
+            "slice-of-life": "Slice of Life",
+            "super-hero": "Super Hero",
+            "superhero": "Superhero",
+            "supernatural": "Supernatural",
+            "survival": "Survival",
+            "system": "System",
+            "time-travel": "Time Travel",
+            "time-travel-future": "Time Travel (Future)",
             "tragedy": "Tragedy",
-            "uncensored": "Uncensored",
-            "work-life": "Work Life",
-            "yaoi-webtoon": "Yaoi",
-            "yuri-webtoon": "Yuri",
+            "video-game": "Video Game",
+            "video-games": "Video Games",
+            "villain": "Villain",
+            "virtual-game": "Virtual Game",
+            "virtual-reality": "Virtual Reality",
+            "virtual-world": "Virtual World",
+            "webtoon": "Webtoon",
+            "wuxia": "Wuxia"
         };
     }
 }

@@ -30,10 +30,14 @@ module.exports = class ToonilyCom extends Source  {
             'url': url,
             'headers': {
               'Host': hosts,
+              'Referer': url,
+              'Accept-Language': 'en-US,en;q=0.5',
+              'Content-Type': 'application/json',
               'User-Agent': userAgent,
               'Cookie': cookie,
             }
           };
+        console.log(`Options are ${options}`)
         return options;
     }
     GetMangaFormDetails(url,popular,page){

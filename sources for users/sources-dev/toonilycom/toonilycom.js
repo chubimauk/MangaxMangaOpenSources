@@ -517,7 +517,7 @@ module.exports = class ToonilyCom extends Source  {
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language",["English"],null));
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content",["Manga","Manwha","Manhua","Adult"],["#4D83C1","#4D83C1","#4D83C1","#ff1100"]));
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("contributor",["xOnlyFadi"],null));
-        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("note",["Uses Cloudflare"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("note",["Thumbnails are broken","Uses Cloudflare"],["#ff1100","#4D83C1"]));
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("tracker",["No"],[]));
 
         console.log("ToonilyCom sourceInfo -- ", sourceInfo);

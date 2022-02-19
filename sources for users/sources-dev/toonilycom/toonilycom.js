@@ -12,6 +12,28 @@ module.exports = class ToonilyCom extends Source  {
         this.baseUrl = 'https://toonily.com';
         
     }
+    getImageSrc(imageObj){
+        let image
+        if(typeof imageObj.attr('data-src') != 'undefined') {
+            image = imageObj.attr('data-src')
+        }
+        else if (typeof imageObj.attr('data-lazy-src') != 'undefined') {
+            image = imageObj.attr('data-lazy-src')
+        }
+        else if (typeof imageObj.attr('srcset') != 'undefined') {
+            image = imageObj.attr('srcset').split(' ')[0]
+        }
+        else {
+            image = imageObj.attr('src')
+        }
+        return encodeURI(decodeURI(this.decodeHTMLEntity(image.trim())))
+    }
+    
+    decodeHTMLEntity(str) {
+        return str.replace(/&#(\d+);/g, function (match, dec) {
+            return String.fromCharCode(dec);
+        })
+    }
     getRequestWithHeaders(method,url) {
         var userAgent = '';
         var cookie = '';
@@ -30,10 +52,14 @@ module.exports = class ToonilyCom extends Source  {
             'url': url,
             'headers': {
               'Host': hosts,
+              'Referer': url,
+              'Accept-Language': 'en-US,en;q=0.5',
+              'Content-Type': 'application/json',
               'User-Agent': userAgent,
               'Cookie': cookie,
             }
           };
+        console.log(`Options are ${JSON.stringify(options)}`)
         return options;
     }
     GetMangaFormDetails(url,popular,page){
@@ -101,12 +127,8 @@ module.exports = class ToonilyCom extends Source  {
         var coverElement = element.find('h3 a').first();
         var url = super.substringAfterFirst('.com', 'https:' + coverElement.attr('href'));
         var name = coverElement.text();
-        var thumbnai = element.find('img').attr('data-src');
+        var thumbnail = this.getImageSrc(element.find('img')) + '?';
         var rank = '0';
-        if (typeof thumbnai === undefined){
-            thumbnai = element.find('img').attr('src');
-        }
-        var thumbnail =  thumbnai + '?'
         return super.manga(name,url,thumbnail,rank);
     }
     
@@ -130,16 +152,11 @@ module.exports = class ToonilyCom extends Source  {
     }
     
     popularMangaFromElement(element) {
-        console.log(element)
         var coverElement = element.find('h3 a').first();
         var url = super.substringAfterFirst('.com', 'https:' + coverElement.attr('href'));
         var name = coverElement.text();
-        var thumbnai = element.find('img').attr('data-src');
+        var thumbnail = this.getImageSrc(element.find('img')) + '?';
         var rank = '0';
-        if (typeof thumbnai === undefined){
-            thumbnai = element.find('img').attr('src');
-        }
-        var thumbnail =  thumbnai + '?'
         return super.manga(name,url,thumbnail,rank);
     }
 
@@ -267,15 +284,11 @@ module.exports = class ToonilyCom extends Source  {
         let titl = $('div.post-title h1')
         titl.find("span").remove()
         let title = titl.text().trim()
-        let thumbnai = $('div.summary_image img').attr('data-src');
+        let thumbnail = this.getImageSrc($('div.summary_image img')) + '?';
         let author = $('div.author-content').text().trim();
         let artist = $('div.artist-content').text().trim();
         let status = $('div.post-status div.summary-heading:contains("Status")').next().text().toUpperCase().trim();
         var genres = [];
-        if (typeof thumbnai === undefined){
-            thumbnai = $('div.summary_image img').attr('src');
-        }
-        var thumbnail =  thumbnai + '?'
         $('div.genres-content a').each(function (i, chapterElement){
             var gen = $(chapterElement).text();
             genres.push(gen);
@@ -286,7 +299,7 @@ module.exports = class ToonilyCom extends Source  {
     }
     
     pageListSelector() {
-        return "div.page-break img";
+        return "div.page-break > img";
     }
     
     pageListRequest(chapter) {
@@ -297,8 +310,9 @@ module.exports = class ToonilyCom extends Source  {
             return this.getRequestWithHeaders("GET",super.pageListRequest(chapter));
         }
     }
-    
-    
+    pageListRequest(chapter) {
+        return this.getRequestWithHeaders("GET",`${this.baseUrl}${chapter.chapter}?style=list`);
+    }
     async fetchPageList(chapter){
         var pageListResponse = await this.send_request(this.pageListRequest(chapter));
         return this.pageListParse(pageListResponse,chapter);
@@ -316,22 +330,18 @@ module.exports = class ToonilyCom extends Source  {
                 cookie = this.cfheaders['Cookie'];
             }
         }
-
         var $ = cheerio.load(pageListResponse);
         var thisReference = this;
         var pages = [];
         $(this.pageListSelector()).each(function (i, pageElement){
-             var url = $(pageElement).attr('src');
-             if (typeof url === "undefined"){
-                url = $(pageElement).attr('data-src');
-            }
+             var url = thisReference.getImageSrc($(pageElement));
              var headers = {};
             headers['Referer'] = thisReference.pageListRequest(chapter)['url'];
             headers['Content-Type'] = 'image/jpeg';
             headers['Cookie'] = cookie;
             headers['User-Agent'] = userAgent;
 
-            pages.push(thisReference.jsonBrowserifyRequest(url.trim(),null,null,headers,null));
+            pages.push(thisReference.jsonBrowserifyRequest(url,null,null,headers,null));
         });
         console.log('ToonilyCom pages', pages);
         if(pages.length == 0){
@@ -340,7 +350,6 @@ module.exports = class ToonilyCom extends Source  {
             return pages;
         }
     }
-    
     async fetchPageImage(page){
         const options = {
           url: page.url,
@@ -376,7 +385,6 @@ module.exports = class ToonilyCom extends Source  {
         var page = parseInt(page);
         var latestUpdatesSelector = this.latestUpdatesSelector();
         var $ = cheerio.load(response);
-
         var json = [];
         $(latestUpdatesSelector).each(function (i, elem) {
             var mangaUpdate = new ToonilyCom().latestUpdatesFromElement($(this));

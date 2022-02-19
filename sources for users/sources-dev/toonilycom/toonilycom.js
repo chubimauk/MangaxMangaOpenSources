@@ -330,14 +330,9 @@ module.exports = class ToonilyCom extends Source  {
                 cookie = this.cfheaders['Cookie'];
             }
         }
-        console.log('Html is ',pageListResponse)
-        console.log('Pass 1')
         var $ = cheerio.load(pageListResponse);
-        console.log('Pass 2')
         var thisReference = this;
-        console.log('Pass 3')
         var pages = [];
-        console.log('Pass 4')
         $(this.pageListSelector()).each(function (i, pageElement){
              var url = thisReference.getImageSrc($(pageElement));
              var headers = {};
@@ -348,7 +343,6 @@ module.exports = class ToonilyCom extends Source  {
 
             pages.push(thisReference.jsonBrowserifyRequest(url,null,null,headers,null));
         });
-        console.log('Pass 5')
         console.log('ToonilyCom pages', pages);
         if(pages.length == 0){
             return "error - set your cookie";

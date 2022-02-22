@@ -7,10 +7,10 @@ var rp = require('request-promise');
 
 var cheerio = require('cheerio');
 
-module.exports = class FrNineManga extends Source {
+module.exports = class EsNineManga extends Source {
   constructor() {
     super();
-    this.baseUrl = 'https://fr.ninemanga.com';
+    this.baseUrl = 'https://es.ninemanga.com';
   }
 
   getRequestWithHeaders(method, url) {
@@ -116,8 +116,8 @@ module.exports = class FrNineManga extends Source {
       var n = name.match(/\bch\b(.*)/gi);
       nam = n[0];
       reg = RegExp(/\b\d+\.?\d?\b/g);
-    } else if (name.match(/\bchapitre\b (\b\d+\.?\d?\b)/gi)) {
-      var n = name.match(/\bchapitre\b(.*)/gi);
+    } else if (name.match(/\bcapítulo\b (\b\d+\.?\d?\b)/gi)) {
+      var n = name.match(/\bcapítulo\b(.*)/gi);
       nam = n[0];
       reg = RegExp(/\b\d+\.?\d?\b/g);
     } else if (name.toLowerCase().indexOf(title.toLowerCase()) >= 0) {
@@ -157,7 +157,7 @@ module.exports = class FrNineManga extends Source {
       chapterNumber = "?";
     }
 
-    return super.chapter(url, "French", volumeNumber, chapterNumber, name, date_upload, scanlator);
+    return super.chapter(url, "Spanish", volumeNumber, chapterNumber, name, date_upload, scanlator);
   }
 
   chapterListParse(response, $, seriesURL) {
@@ -193,13 +193,13 @@ module.exports = class FrNineManga extends Source {
     let thumbnail = $('img[itemprop="image"]', info).attr('src');
     let author = $('li a[itemprop="author"]', info).text().trim();
     let artist = author;
-    let status = $('li a.red', info).first().text().toUpperCase().trim().replace(/En cours/gi, "ONGOING").replace(/Complété/gi, "COMPLETED");
+    let status = $('li a.red', info).first().text().toUpperCase().trim().replace(/EN CURSO/gi, "ONGOING").replace(/COMPLETADO/gi, "COMPLETED");
     var genres = [];
     $('li[itemprop="genre"] a', info).each(function (i, chapterElement) {
       var gen = $(chapterElement).text();
       genres.push(gen);
     });
-    let description = $('p[itemprop="description"]', info).text().trim().replace(/Sinopse:\n/gi, "");
+    let description = $('p[itemprop="description"]', info).text().trim().replace(/Resumen:\n/gi, "");
     console.log('finishedMangaDetails parse');
     return this.mangaDetails(title, thumbnail, description, author, artist, status, genres);
   }
@@ -242,7 +242,7 @@ module.exports = class FrNineManga extends Source {
       let currentPageToParse = arguments[0];
       console.log("chainedResponseData -- ", chainedResponseData);
       var requestsForPagesWithImages = chainedResponseData;
-      console.log("FrNineManga chainedResponse -- ", requestsForPagesWithImages);
+      console.log("EsNineManga chainedResponse -- ", requestsForPagesWithImages);
       var currentPage = parseInt(requestsForPagesWithImages["currentRequestNumber"]);
       var lastRequestNumber = parseInt(requestsForPagesWithImages["lastRequestNumber"]);
       var $ = cheerio.load(pageListResponse);
@@ -296,11 +296,11 @@ module.exports = class FrNineManga extends Source {
       };
 
       for (var index = 1; index <= lastPageNumber; index++) {
-        let pageURL = `https://fr.ninemanga.com${baseChapterPageURL}-${index}.html`;
+        let pageURL = `https://es.ninemanga.com${baseChapterPageURL}-${index}.html`;
         requestsForPagesWithImages[`${index}`] = thisReference.jsonBrowserifyRequest(pageURL, null, null, headers, null);
       }
 
-      console.log("FrNineManga pageURLs -- ", requestsForPagesWithImages);
+      console.log("EsNineManga pageURLs -- ", requestsForPagesWithImages);
       requestsForPagesWithImages["nextRequest"] = requestsForPagesWithImages["1"];
       requestsForPagesWithImages["currentRequestNumber"] = "1";
       requestsForPagesWithImages["lastRequestNumber"] = `${lastPageNumber}`;
@@ -327,7 +327,7 @@ module.exports = class FrNineManga extends Source {
   }
 
   async fetchLatestManga(page) {
-    console.log("fetchLatestManga -- FrNineManga");
+    console.log("fetchLatestManga -- EsNineManga");
     var page = parseInt(page);
     var currentPageHtml = await this.send_request(this.latestUpdatesRequest(`${page}`));
     return this.latestUpdatesParse(page, currentPageHtml);
@@ -339,11 +339,11 @@ module.exports = class FrNineManga extends Source {
     var $ = cheerio.load(response);
     var json = [];
     $(latestUpdatesSelector).each(function (i, elem) {
-      var mangaUpdate = new FrNineManga().latestUpdatesFromElement($(this));
+      var mangaUpdate = new EsNineManga().latestUpdatesFromElement($(this));
       mangaUpdate.updates = 1;
       json.push(mangaUpdate);
     });
-    console.log("FrNineManga latest -- ", json);
+    console.log("EsNineManga latest -- ", json);
     var mangasPage = {};
     mangasPage.mangas = json;
     var hasNextPage = 1 > 1;
@@ -429,24 +429,24 @@ module.exports = class FrNineManga extends Source {
     filters.push(CompletedFilter);
     sourceInfo.filters = filters;
     sourceInfo.displayInfo = [];
-    sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language", ["French"], null));
+    sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language", ["Spanish"], null));
     sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content", ["Manga", "Manhwa", "Manhua", "Adult"], ["#4D83C1", "#4D83C1", "#4D83C1", "#ff1100"]));
     sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("contributor", ["xOnlyFadi"], null));
-    sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("note", ["Requiert des demandes infinies de pages", "Requires Infinite requests for pages"], ["#ff1100", "#ff1100"]));
+    sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("note", ["Requiere infinitas peticiones de páginas", "Requires Infinite requests for pages"], ["#ff1100", "#ff1100"]));
     sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("tracker", ["No"], [])); //should just be No or Yes
 
-    console.log("FrNineManga sourceInfo -- ", sourceInfo);
+    console.log("EsNineManga sourceInfo -- ", sourceInfo);
     return sourceInfo;
   }
 
   searchMangaRequest(page, query, filters) {
-    console.log("FrNineManga filters -- ", filters);
+    console.log("EsNineManga filters -- ", filters);
     var query = query = query.replace(/_/g, "+");
 
     if (Object.keys(filters).length === 0) {
       console.log("filters are empty");
       var url = this.getRequestWithHeaders("GET", `${this.baseUrl}/search/?wd=${this.normalizeSearchQuery(query)}&page=${page}`);
-      console.log("attempting to fetch search request for FrNineManga - searchUrl is ", url);
+      console.log("attempting to fetch search request for EsNineManga - searchUrl is ", url);
       return url;
     } else {
       console.log("filters has properties");
@@ -500,7 +500,7 @@ module.exports = class FrNineManga extends Source {
 
       url = super.addQueryParameter(url, "type", `high`, false);
       let finsihedur = this.getRequestWithHeaders("GET", url);
-      console.log("attempting to fetch search request for FrNineManga - searchUrl is ", finsihedur);
+      console.log("attempting to fetch search request for EsNineManga - searchUrl is ", finsihedur);
       return finsihedur;
     }
   }
@@ -526,7 +526,7 @@ module.exports = class FrNineManga extends Source {
     var json = [];
     var $ = cheerio.load(response);
     $(searchMangaSelector).each(function (i, elem) {
-      json.push(new FrNineManga().searchMangaFromElement($(this)));
+      json.push(new EsNineManga().searchMangaFromElement($(this)));
     });
     var page = parseInt(page);
     var mangasPage = {};
@@ -554,199 +554,132 @@ module.exports = class FrNineManga extends Source {
 
   getGenresList() {
     return {
-      "5": "Action",
-      "358": "Adaptation",
-      "52": "Adulte",
-      "27": "Adventure",
-      "13": "Amitié",
-      "146": "Amour",
-      "98": "Anges",
-      "357": "Animals",
-      "120": "Animaux",
-      "366": "Anthology",
-      "89": "Apprentissage",
-      "24": "Arts Martiaux",
-      "84": "Assassinat",
-      "92": "Autre Monde",
-      "11": "Aventure",
-      "169": "Baseball",
-      "172": "Campagne",
-      "23": "Chasseur",
-      "309": "Chasseur De Prime",
-      "123": "Club",
-      "81": "ComÉDie",
-      "14": "Combats",
-      "6": "ComéDie",
-      "25": "Comedy",
-      "322": "Cooking",
-      "270": "Cosmos",
-      "66": "Crime",
-      "53": "Crossdressing",
-      "119": "Cyborgs",
-      "302": "Danse",
-      "222": "DéLinquant",
-      "148": "DéLinquants",
-      "18": "DéMons",
-      "296": "Dieux / DéEsses",
-      "304": "Donjon",
-      "306": "Doujin",
-      "278": "Doujinshi",
-      "197": "Dragons",
-      "35": "Drama",
-      "2": "Drame",
-      "112": "Dystopie",
-      "47": "Ecchi",
-      "164": "éChec",
-      "49": "Ecole",
-      "237": "Enfer",
-      "158": "Erotique",
-      "135": "Espace",
-      "22": "Esprit",
-      "54": "Famille",
-      "1": "Fantastique",
-      "28": "Fantasy",
-      "20": "FantôMes",
-      "7": "Fruit",
-      "321": "Full Color",
-      "316": "Gang",
-      "317": "Gangster",
-      "97": "Gastronomie",
-      "294": "Gay-Lesbien",
-      "51": "Gender Bender",
-      "171": "Genderswap",
-      "332": "Global-Manga",
-      "105": "Gore",
-      "15": "Guerre",
-      "377": "Gyaru",
-      "161": "HarcèLement",
-      "50": "Harem",
-      "154": "Histoire",
-      "160": "Histoires Courtes",
-      "41": "Historical",
-      "76": "Historique",
-      "267": "Homosexualité",
-      "19": "Horreur",
-      "63": "Horror",
-      "79": "Humour",
-      "191": "Idols",
-      "376": "Incest",
-      "342": "Inceste",
-      "36": "Isekai",
-      "70": "Jeu",
-      "232": "Jeunesse",
-      "147": "Jeux VidéO",
-      "94": "Josei",
-      "244": "Loli",
-      "352": "Long Strip",
-      "126": "LycéE",
-      "142": "Mafia",
-      "360": "Magic",
-      "286": "Magical Girls",
-      "8": "Magie",
-      "340": "Maladie",
-      "323": "Manhua",
-      "330": "Mariage",
-      "355": "Martial Arts",
-      "82": "Mature",
-      "68": "Mecha",
-      "153": "Mechas",
-      "137": "MéDecine",
-      "65": "Medical",
-      "115": "Militaire",
-      "344": "Mondes Virtuels",
-      "356": "Monsters",
-      "77": "Monstres",
-      "375": "Music",
-      "151": "Musique",
-      "85": "MystÈRe",
-      "3": "MystèRe",
-      "40": "Mystery",
-      "227": "Nature",
-      "369": "Ninja",
-      "242": "Nostalgie",
-      "33": "Nourriture",
-      "362": "Official Colored",
-      "173": "One Shot",
-      "299": "Oneshot",
-      "190": "Otaku",
-      "131": "Paranormal",
-      "96": "Parodie",
-      "64": "Philosophical",
-      "9": "Pirates",
-      "307": "Plaisir",
-      "236": "Police",
-      "150": "Policier",
-      "91": "Politique",
-      "234": "Post-Apocalypse",
-      "364": "Post-Apocalyptic",
-      "113": "Post-Apocalyptique",
-      "10": "Pouvoirs",
-      "61": "Psychological",
-      "74": "Psychologie",
-      "42": "Psychologique",
-      "93": "Quotidien",
-      "107": "RéIncarnation",
-      "343": "Reine",
-      "315": "Reverse Harem",
-      "149": "RêVes",
-      "233": "Robots",
-      "12": "Roi",
-      "26": "Romance",
-      "55": "Sadique",
-      "155": "Samurai",
-      "43": "School Life",
-      "44": "Sci-Fi",
-      "31": "Science-Fiction",
-      "88": "Seinen",
-      "331": "Serviteur",
-      "165": "Shogi",
-      "101": "Shojo",
-      "87": "Shojo Ai",
-      "80": "Shonen",
-      "240": "Shonen Ai",
-      "370": "Shota",
-      "45": "Shoujo Ai",
-      "39": "Shounen Ai",
-      "29": "Slice Of Life",
-      "56": "Smut",
-      "69": "Social",
-      "118": "SociéTé",
-      "102": "Sport",
-      "67": "Sports",
-      "238": "Suicide",
-      "16": "Super Pouvoirs",
-      "62": "Superhero",
-      "354": "Supernatural",
-      "4": "Surnaturel",
-      "213": "Survivre",
-      "75": "Suspense",
-      "347": "Technologies",
-      "183": "Tennis",
-      "128": "Thriller",
-      "301": "Time Travel",
-      "30": "Tournois",
-      "73": "TragéDie",
-      "37": "Tragedy",
-      "111": "Tragique",
-      "48": "Tranche De Vie",
-      "192": "Travestissement",
-      "100": "Vampires",
-      "83": "Vengeance",
-      "281": "Video Games",
-      "86": "Vie Scolaire",
-      "335": "Villainess",
-      "17": "Voyage",
-      "108": "Voyage Temporel",
-      "353": "Web Comic",
-      "303": "Webcomic",
-      "32": "Webtoon",
-      "46": "Wuxia",
-      "95": "Yakuza",
-      "38": "Yaoi",
-      "241": "Yokai",
-      "159": "Yonkoma",
-      "60": "Yuri",
-      "277": "Zombies"
+      "201": "4-Koma",
+      "213": "AcciÓN",
+      "69": "AccióN",
+      "177": "Action",
+      "193": "Adult",
+      "86": "Adulto",
+      "179": "Adventure",
+      "229": "AnimacióN",
+      "202": "ApocalíPtico",
+      "66": "Artes Marciales",
+      "64": "Aventura",
+      "120": "Aventuras",
+      "223": "BL (Boys Love)",
+      "228": "Boys Love",
+      "225": "Ciberpunk",
+      "93": "Ciencia FiccióN",
+      "75": "Comedia",
+      "178": "Comedy",
+      "227": "Crimen",
+      "199": "Cyberpunk",
+      "126": "Demonios",
+      "76": "Deporte",
+      "111": "Deportes",
+      "216": "Doujinshi",
+      "79": "Drama",
+      "65": "Ecchi",
+      "81": "Escolar",
+      "249": "EspañOl",
+      "238": "Extranjero",
+      "237": "Familia",
+      "100": "Fantacia",
+      "214": "FantasÍA",
+      "70": "FantasíA",
+      "180": "Fantasy",
+      "175": "Gender Bender",
+      "230": "GéNero Bender",
+      "226": "Girls Love",
+      "222": "GL (Girls Love)",
+      "108": "Gore",
+      "234": "Guerra",
+      "78": "Harem",
+      "83": "Hentai",
+      "233": "Historia",
+      "190": "Historical",
+      "95": "HistóRico",
+      "99": "Horror",
+      "240": "Isekai",
+      "112": "Josei",
+      "72": "Maduro",
+      "172": "Magia",
+      "248": "Magical Girls",
+      "251": "Manga",
+      "189": "Martial",
+      "181": "Martial Arts",
+      "115": "Mecha",
+      "247": "Medical",
+      "205": "Militar",
+      "88": "Misterio",
+      "241": "Music",
+      "121": "MúSica",
+      "197": "Musical",
+      "187": "Mystery",
+      "235": "NiñOs",
+      "239": "Oeste",
+      "184": "One Shot",
+      "221": "One-Shot",
+      "195": "Oneshot",
+      "198": "Parodia",
+      "252": "Philosophical",
+      "220": "PolicíAca",
+      "236": "Policiaco",
+      "208": "Policial",
+      "219": "PsicolóGica",
+      "96": "PsicolóGico",
+      "192": "Psychological",
+      "231": "Realidad",
+      "196": "Realidad Virtual",
+      "169": "Recuentos De La Vida",
+      "207": "ReencarnacióN",
+      "67": "Romance",
+      "210": "Samurai",
+      "176": "School Life",
+      "123": "Sci-Fi",
+      "73": "Seinen",
+      "80": "Shojo",
+      "186": "Shojo Ai",
+      "218": "Shojo-Ai (Yuri Soft)",
+      "77": "Shonen",
+      "128": "Shonen Ai",
+      "174": "Shonen-Ai",
+      "217": "Shonen-Ai (Yaoi Soft)",
+      "224": "Shota",
+      "85": "Shoujo",
+      "194": "Shoujo Ai",
+      "173": "Shoujo-Ai",
+      "68": "Shounen",
+      "185": "Shounen Ai",
+      "182": "Slice Of Life",
+      "183": "Smut",
+      "74": "Sobrenatural",
+      "188": "Sports",
+      "124": "Super Natural",
+      "206": "Super Poderes",
+      "246": "Superhero",
+      "119": "Supernatural",
+      "215": "Superpoderes",
+      "203": "Supervivencia",
+      "171": "Suspense",
+      "242": "Telenovela",
+      "204": "Thiller",
+      "97": "Thriller",
+      "87": "Tragedia",
+      "191": "Tragedy",
+      "209": "Vampiros",
+      "243": "Ver En Lectormanga",
+      "84": "Vida Cotidiana",
+      "170": "Vida Escolar",
+      "122": "Vida Escolar.",
+      "92": "Webcomic",
+      "200": "Webtoon",
+      "244": "Wuxia",
+      "105": "Yaoi",
+      "211": "Yaoi (Soft)",
+      "232": "Yonkoma",
+      "127": "Yuri",
+      "212": "Yuri (Soft)"
     };
   }
 
@@ -762,17 +695,17 @@ var source = require('./source.js');
 
 var sources = {};
 
-var frninemanga = require('./frninemanga.js');
+var esninemanga = require('./esninemanga.js');
 
 var currentSources = {
-  'frninemanga': {
+  'esninemanga': {
     version: '1.0',
     location: 'default'
   }
 };
 
 function loadDefaultSourcesShippedWithApp() {
-  sources['frninemanga'] = new frninemanga();
+  sources['esninemanga'] = new esninemanga();
 }
 
 loadDefaultSourcesShippedWithApp();
@@ -1173,7 +1106,7 @@ function pageListParse(source
 /*, invisible jsonChainedResponse.responseData ONLY*/
 ) {
   //-> [JSONPage]
-  //necessary for frninemanga
+  //necessary for esninemanga
   var chapter = {
     series: seriesURL,
     chapter: chapterURL,
@@ -1194,7 +1127,7 @@ function pageListParse(source
 function getAvailableSources() {
   var sources = [];
   sources.push({
-    "name": "frninemanga",
+    "name": "esninemanga",
     "version": 1.0,
     "defaultUnlocked": true,
     "unlockKey": null
@@ -1402,7 +1335,7 @@ module.exports = {
   currentUserParse: currentUserParse,
   setTrackerUser: setTrackerUser
 };
-},{"./frninemanga.js":1,"./source.js":3,"cheerio":149,"request-promise":425}],3:[function(require,module,exports){
+},{"./esninemanga.js":1,"./source.js":3,"cheerio":149,"request-promise":425}],3:[function(require,module,exports){
 'use strict';
 
 var rp = require('request-promise');

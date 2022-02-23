@@ -793,8 +793,6 @@ module.exports = class MangaMx extends Source {
     const regex = RegExp(/\b\d+\.?\d?\b/g);
 
     if (chapterNumber === "undefined") {
-      console.log('regex needed');
-
       if (name != null) {
         var numbers = name.match(regex);
 
@@ -819,7 +817,6 @@ module.exports = class MangaMx extends Source {
         chapterNumber = "?";
       }
     } else {
-      console.log('regex not needed');
       chapterNumber = chapterNumber;
     }
 
@@ -998,69 +995,54 @@ module.exports = class MangaMx extends Source {
     var sourceInfo = {};
     sourceInfo.requiresLogin = false;
     sourceInfo.url = this.baseUrl;
-    sourceInfo.isCloudFlareSite = true;
+    sourceInfo.isCloudFlareSite = false;
     var filters = [];
-    var ContenidoNSFWFilter = {};
-    ContenidoNSFWFilter.paramKey = 'adulto';
-    ContenidoNSFWFilter.displayName = 'Contenido NSFW';
-    ContenidoNSFWFilter.type = 'choice';
-    ContenidoNSFWFilter.options = {};
-    ContenidoNSFWFilter.options['end'] = 'Completed';
-    ContenidoNSFWFilter.options['on-going'] = 'OnGoing';
-    ContenidoNSFWFilter.options['canceled'] = 'Canceled';
-    var statusFilter = {};
-    statusFilter.paramKey = 'status';
-    statusFilter.displayName = 'Status';
-    statusFilter.type = 'choice';
-    statusFilter.options = {};
-    statusFilter.options['end'] = 'Completed';
-    statusFilter.options['on-going'] = 'OnGoing';
-    statusFilter.options['canceled'] = 'Canceled';
-    statusFilter.options['on-hold'] = 'On Hold';
     var sortFilter = {};
     sortFilter.paramKey = 'sort';
-    sortFilter.displayName = 'Order By';
+    sortFilter.displayName = 'Ordenar por';
     sortFilter.type = 'sort';
     sortFilter.options = {};
-    sortFilter.options['latest'] = 'Latest';
-    sortFilter.options['views'] = 'Most View';
-    sortFilter.options['trending'] = 'Treding';
-    sortFilter.options['new-manga'] = 'New';
-    sortFilter.options['rating'] = 'Rating';
-    sortFilter.options['alphabet'] = 'A-Z';
-    var AdultconFilter = {};
-    AdultconFilter.paramKey = 'adultcon';
-    AdultconFilter.displayName = 'Adult Content';
-    AdultconFilter.type = 'choice';
-    AdultconFilter.options = {};
-    AdultconFilter.options[''] = 'All';
-    AdultconFilter.options['0'] = 'None';
-    AdultconFilter.options['1'] = 'Only';
-    AdultconFilter.default = '';
-    var GenreConFilter = {};
-    GenreConFilter.paramKey = 'gencon';
-    GenreConFilter.displayName = 'Genre condition';
-    GenreConFilter.type = 'choice';
-    GenreConFilter.options = {};
-    GenreConFilter.options[''] = 'or';
-    GenreConFilter.options['0'] = 'and';
-    GenreConFilter.default = '';
+    sortFilter.options['visitas'] = 'Visitas';
+    sortFilter.options['id'] = 'Recientes';
+    sortFilter.options['nombre'] = 'Alfabético';
+    sortFilter.default = 'id';
+    var statusFilter = {};
+    statusFilter.paramKey = 'status';
+    statusFilter.displayName = 'Estado';
+    statusFilter.type = 'choice';
+    statusFilter.options = {};
+    statusFilter.options['false'] = 'Estado';
+    statusFilter.options['1'] = 'En desarrollo';
+    statusFilter.options['0'] = 'Completo';
+    statusFilter.default = 'false';
+    var typedFilter = {};
+    typedFilter.paramKey = 'type';
+    typedFilter.displayName = 'Tipo';
+    typedFilter.type = 'choice';
+    typedFilter.options = {};
+    typedFilter.options['end'] = 'Todo';
+    typedFilter.options['on-going'] = 'Mangas';
+    typedFilter.options['canceled'] = 'Manhwas';
+    typedFilter.options['end'] = 'One Shot';
+    typedFilter.options['on-going'] = 'Manhuas';
+    typedFilter.options['canceled'] = 'Novelas';
+    typedFilter.default = 'end';
     var GeneresLISTS = {};
     GeneresLISTS.paramKey = 'genres';
-    GeneresLISTS.displayName = 'Genres List';
+    GeneresLISTS.displayName = 'Generos';
     GeneresLISTS.type = 'tag';
     GeneresLISTS.options = this.getGenresList();
-    filters.push(ContenidoNSFWFilter);
-    filters.push(statusFilter);
+    GeneresLISTS.default = 'false';
     filters.push(sortFilter);
-    filters.push(AdultconFilter);
-    filters.push(GenreConFilter);
+    filters.push(statusFilter);
+    filters.push(typedFilter);
     filters.push(GeneresLISTS);
     sourceInfo.filters = filters;
     sourceInfo.displayInfo = [];
     sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language", ["Spanish"], null));
     sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content", ["Manga", "Manwha", "Manhua", "Adult"], ["#4D83C1", "#4D83C1", "#4D83C1", "#ff1100"]));
     sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("contributor", ["xOnlyFadi"], null));
+    sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("note", ["Algunas páginas del sitio tardan en cargarse"], null));
     sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("tracker", ["No"], []));
     console.log("MangaMx sourceInfo -- ", sourceInfo);
     return sourceInfo;
@@ -1074,15 +1056,17 @@ module.exports = class MangaMx extends Source {
         'method': 'POST',
         'url': `${this.baseUrl}/buscar`,
         'headers': {
+          'Accept': '*/*',
+          'Accept-Language': 'en-US,en;q=0.5',
           'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-          'Refer': this.baseUrl
+          'X-Requested-With': 'XMLHttpRequest',
+          'Origin': 'https://manga-mx.com',
+          'Alt-Used': 'manga-mx.com',
+          'Referer': 'https://manga-mx.com/'
         },
-        form: {
-          'buscar': query,
-          '_token': csrfToken
-        }
+        body: `buscar=${query}&_token=${csrfToken}`
       };
-      console.log("attempting to fetch search request for ReadM - searchUrl is ", options);
+      console.log("attempting to fetch search request for MangaMx - searchUrl is ", options);
       return options;
     } else {
       console.log("filters has properties");
@@ -1091,27 +1075,26 @@ module.exports = class MangaMx extends Source {
 
       for (var i = 0; i < filters.length; i++) {
         switch (filters[i].key) {
-          case "adulto":
-            url = super.addQueryParameter(url, "adulto", filters[i].value, false);
-            break;
-
-          case "estado":
+          case "status":
             url = super.addQueryParameter(url, "estado", filters[i].value, false);
             break;
 
-          case "filtro":
+          case "sort":
             url = super.addQueryParameter(url, "filtro", filters[i].value, false);
+
+            if (filters[i].direction == "asc") {
+              url += '&orden=asc';
+            } else if (filters[i].direction == "desc") {
+              url += '&orden=desc';
+            }
+
             break;
 
-          case "ascending":
-            url = super.addQueryParameter(url, "orden", filters[i].value, false);
-            break;
-
-          case "tipo":
+          case "type":
             url = super.addQueryParameter(url, "tipo", filters[i].value, false);
             break;
 
-          case "genero":
+          case "genres":
             url = super.addQueryParameter(url, "genero", filters[i].value, false);
             break;
 
@@ -1156,7 +1139,6 @@ module.exports = class MangaMx extends Source {
       var page = parseInt(page);
       var searchMangaSelector = this.searchMangaSelector();
       var json = [];
-      Buffer.from(b64string, 'base64');
       var $ = cheerio.load(response);
       $(searchMangaSelector).each(function (i, elem) {
         json.push(new MangaMx().searchMangaFromElement($(this)));
@@ -1182,46 +1164,44 @@ module.exports = class MangaMx extends Source {
 
   getGenresList() {
     return {
-      '2': 'Action',
-      '3': 'Adult',
-      '4': 'Adventure',
-      '6': 'Comedy',
-      '7': 'Cooking',
-      '9': 'Doujinshi',
-      '10': 'Drama',
-      '11': 'Ecchi',
-      '12': 'Fantasy',
-      '13': 'Gender bender',
-      '14': 'Harem',
-      '15': 'Historical',
-      '16': 'Horror',
-      '45': 'Isekai',
-      '17': 'Josei',
-      '44': 'Manhua',
-      '43': 'Manhwa',
-      '19': 'Martial arts',
-      '20': 'Mature',
-      '21': 'Mecha',
-      '22': 'Medical',
-      '24': 'Mystery',
-      '25': 'One shot',
-      '26': 'Psychological',
-      '27': 'Romance',
-      '28': 'School life',
-      '29': 'Sci fi',
-      '30': 'Seinen',
-      '31': 'Shoujo',
-      '32': 'Shoujo ai',
-      '33': 'Shounen',
-      '34': 'Shounen ai',
-      '35': 'Slice of life',
-      '36': 'Smut',
-      '37': 'Sports',
-      '38': 'Supernatural',
-      '39': 'Tragedy',
-      '40': 'Webtoons',
-      '41': 'Yaoi',
-      '42': 'Yuri'
+      "false": "Todos",
+      "1": "Comedia",
+      "2": "Drama",
+      "3": "Acción",
+      "4": "Escolar",
+      "5": "Romance",
+      "6": "Ecchi",
+      "7": "Aventura",
+      "8": "Shōnen",
+      "9": "Shōjo",
+      "10": "Deportes",
+      "11": "Psicológico",
+      "12": "Fantasía",
+      "13": "Mecha",
+      "14": "Gore",
+      "15": "Yaoi",
+      "16": "Yuri",
+      "17": "Misterio",
+      "18": "Sobrenatural",
+      "19": "Seinen",
+      "20": "Ficción",
+      "21": "Harem",
+      "25": "Webtoon",
+      "27": "Histórico",
+      "30": "Músical",
+      "31": "Ciencia ficción",
+      "32": "Shōjo-ai",
+      "33": "Josei",
+      "34": "Magia",
+      "35": "Artes Marciales",
+      "36": "Horror",
+      "37": "Demonios",
+      "38": "Supervivencia",
+      "39": "Recuentos de la vida",
+      "40": "Shōnen ai",
+      "41": "Militar",
+      "42": "Eroge",
+      "43": "Isekai"
     };
   }
 

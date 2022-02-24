@@ -47,7 +47,7 @@ module.exports = class Manhwa18Net extends Source  {
         var name = coverElement.text();
         var thumbnail = this.getImgAttr(element.find('img, .thumb-wrapper .img-in-ratio'));
         var rank = '0';
-        return super.manga(name,url,thumbnail,rank);
+        return super.manga(name,'/'+url,"https://manhwa18.net"+thumbnail,rank);
     }
     
     latestUpdatesRequest(page) {
@@ -136,7 +136,7 @@ module.exports = class Manhwa18Net extends Source  {
         }
         
         
-        return super.chapter(url, "English", volumeNumber, chapterNumber, name, date_upload, scanlator);
+        return super.chapter('/'+url, "English", volumeNumber, chapterNumber, name, date_upload, scanlator);
     }
     
      chapterListParse(response, $, seriesURL){
@@ -168,9 +168,9 @@ module.exports = class Manhwa18Net extends Source  {
         let author = $('li a.btn-info').contents().toArray()
         .map(element => element.type === 'text' ? $(element).text().trim() : null)
         .filter(text => text)
-        .join(', ').replace(/Updating/g,'');
+        .join(', ').replace(/Updating/g,'Unknown');
         let artist = author
-        let status = $('li a.btn-success').text().toUpperCase().trim();
+        let status = $('li a.btn-success').text().toUpperCase().trim().replace(/on going/gi,'ONGOING');
         var genres = [];
         $('li a.btn-danger').each(function (i, chapterElement){
             var gen = $(chapterElement).text();
@@ -262,16 +262,9 @@ module.exports = class Manhwa18Net extends Source  {
         
         var mangasPage = {};
         mangasPage.mangas = json;
-        
-        
-        var lastPageNumber = this.getLastPageNumber(response);
-        var hasNextPage = lastPageNumber;
-        var nextPage = page + 1;
-        
+        var hasNextPage = this.getLastPageNumber(response);
+        var nextPage = page + 1; 
         var results = json.length;
-        if (lastPageNumber != null && lastPageNumber > 0){
-            results = results * lastPageNumber;
-        }
         console.log("Manhwa18Net latest -- ", json);
         return super.mangasPage(json, hasNextPage, nextPage, results);
     }
@@ -288,14 +281,9 @@ module.exports = class Manhwa18Net extends Source  {
             json.push(thisReference.mangaFromElement($(this)));
         });
         
-        var lastPageNumber = this.getLastPageNumber(response);
-        var hasNextPage = lastPageNumber;
+        var hasNextPage = this.getLastPageNumber(response);
         var nextPage = page + 1; 
         var results = json.length;
-        
-        if (lastPageNumber != null && lastPageNumber > 0){
-            results = results * lastPageNumber;
-        }
         return this.mangasPage(json, hasNextPage, nextPage, results);
     }
     fetchSourceInfo() {
@@ -321,6 +309,7 @@ module.exports = class Manhwa18Net extends Source  {
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language",["English"],null));
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content",["Manwha","Adult"],["#4D83C1","#ff1100"]));
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("contributor",["xOnlyFadi"],null));
+        sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("note",["Advanced Search is removed until further notice"],["#ff1100"]));
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("tracker",["No"],[]));
         console.log("Manhwa18Net sourceInfo -- ", sourceInfo);
         return sourceInfo;
@@ -363,17 +352,11 @@ module.exports = class Manhwa18Net extends Source  {
         });
         
         var page = parseInt(page);
-        var lastPageNumber = this.getLastPageNumber(response);
         var mangasPage = {};
         mangasPage.mangas = json;
         mangasPage.hasNextPage = (json.length >= 20);
         mangasPage.nextPage = page + 1;
-
-        var results = json.length;
-        if (mangasPage.hasNextPage){
-          results = results * 1;
-        }
-        mangasPage.results = results;
+        mangasPage.results = json.length;
         console.log("mangasPage -- ", mangasPage);
         return mangasPage;
     }

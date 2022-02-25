@@ -452,7 +452,6 @@ module.exports = class Readcomiconline extends Source  {
     searchMangaRequest(page /*Int*/, query, filters) {
         var uri = '';
         console.log("readcomiconline filters -- ", filters);
-        var query = query = query.replace("_","_"); //spaces need to be _ for manganelo -- TODOREADCOMICONLINE
         if (Object.keys(filters).length === 0) {
             //check dictionary/object is empty
             console.log("filters are empty");
@@ -606,7 +605,9 @@ module.exports = class Readcomiconline extends Source  {
         query = query.replace(/[ùúụủũưừứựửữ]+/g, "u");
         query = query.replace(/[ỳýỵỷỹ]+/g, "y");
         query = query.replace(/[đ]+/g, "d");
-        query = query.replace(" ","_"); //remove spaces //this is what will be in the URL _ instead of a space -- fixes search with spaces
+        query = query.replace(/ /g,"+");//remove spaces //this is what will be in the URL + instead of a space -- fixes search with spaces
+        query = query.replace(/%20/g, "+");
+        query = query.replace(/_/g,"+");
         //TODO
         //str = str.replace("""!|@|%|\^|\*|\(|\)|\+|=|<|>|\?|/|,|\.|:|;|'| |"|&|#|\[|]|~|-|$|_""".toRegex(), "_")
         //str = str.replace("_+_".toRegex(), "_")

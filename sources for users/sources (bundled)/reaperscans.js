@@ -768,7 +768,7 @@ module.exports = class ReaperScans extends Source {
     var coverElement = element.find('h3 a').first();
     var url = super.substringAfterFirst('.com', 'https:' + coverElement.attr('href'));
     var name = coverElement.text();
-    var thumbnail = this.getImageSrc(element.find('img')) + '?';
+    var thumbnail = this.getImageSrc(element.find('img'));
     var rank = '0';
     return super.manga(name, url, thumbnail, rank);
   }
@@ -887,7 +887,7 @@ module.exports = class ReaperScans extends Source {
     let titl = $('div.post-title h1');
     titl.find("span").remove();
     let title = titl.text().trim();
-    let thumbnail = this.getImageSrc($('div.summary_image img')) + '?';
+    let thumbnail = this.getImageSrc($('div.summary_image img'));
     let author = $('div.author-content').text().trim();
     let artist = $('div.artist-content').text().trim();
     let status = $('div.post-status div.summary-heading:contains("Status")').next().text().toUpperCase().trim();
@@ -978,11 +978,18 @@ module.exports = class ReaperScans extends Source {
   }
 
   pageListRequest(chapter) {
-    if (chapter.chapter.startsWith('http')) {
-      return this.getRequestWithHeaders('GET', chapter.chapter);
+    var chap = super.pageListRequest(chapter);
+
+    if (chap.match(/(?:\b|_)(?:style=paged)(?:\b|_)/i)) {
+      var substringBef = super.substringBeforeFirst('?style=paged', chap);
+      var url = substringBef + "?style=list";
+    } else if (chap.match(/(?:\b|_)(?:style=list)(?:\b|_)/i)) {
+      var url = chap;
     } else {
-      return this.getRequestWithHeaders('GET', super.pageListRequest(chapter));
+      var url = chap + "?style=list";
     }
+
+    return this.getRequestWithHeaders("GET", url);
   }
 
   async fetchPageList(chapter) {
@@ -1152,7 +1159,7 @@ module.exports = class ReaperScans extends Source {
     sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language", ["English"], null));
     sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content", ["Manga", "Manwha", "Manhua"], ["#4D83C1", "#4D83C1", "#4D83C1"]));
     sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("contributor", ["xOnlyFadi"], null));
-    sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("note", ["Most of the thumbnails are broken", "Details requires infinite requests"], ["#4D83C1", "#ff1100"]));
+    sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("note", ["Details requires infinite requests"], ["#4D83C1"]));
     sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("tracker", ["No"], []));
     console.log("ReaperScans sourceInfo -- ", sourceInfo);
     return sourceInfo;

@@ -452,7 +452,7 @@ module.exports = class Readcomiconline extends Source {
 
     sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("language", ["English"], null));
     sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("content", ["Comics"], ["#4D83C1"]));
-    sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("contributor", ["mangaxmanga", "xOnlyFadi"], null));
+    sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("contributor", ["mangaxmanga"], null));
     sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag("tracker", ["No"], [])); //should just be No or Yes
 
     console.log("readcomiconline sourceInfo -- ", sourceInfo);
@@ -672,13 +672,13 @@ module.exports = class Readcomiconline extends Source {
     var searchMangaSelector = this.searchMangaSelector();
     console.log("readcomiconline searchMangaResponse -- ", response);
     var $ = cheerio.load(response);
-    var json = [];
     var directManga = $('.barTitle', $('.rightBox')).first().text().trim(); //checks if the comic was redirected and then makes one page mangapage
 
-    if (directManga === 'Cover') {
+    if (`${directManga}` === 'Cover') {
       let name = $('.bigChar', $('.bigBarContainer').first()).text().trim();
       let url = $('.bigChar').attr('href');
       var thumbnail_url = $('img', $('.rightBox')).attr('src');
+      var directed = [];
       var thumbnail = thumbnail_url;
 
       if (!thumbnail_url.includes("https")) {
@@ -686,20 +686,20 @@ module.exports = class Readcomiconline extends Source {
       }
 
       var rank = '0';
-      json.push({
+      directed.push({
         name,
         url,
         thumbnail,
         rank
       });
       var mangasPage = {};
-      mangasPage.mangas = json;
+      mangasPage.mangas = directed;
       mangasPage.hasNextPage = false; //lastPageNumber > page; //search not paged for readcomiconline
 
       mangasPage.nextPage = page + 1; //this doesn't matter if hasNextPage is false
 
       console.log("mangasPage -- ", mangasPage);
-      var results = json.length; //if (lastPageNumber != null && lastPageNumber > 0){
+      var results = directed.length; //if (lastPageNumber != null && lastPageNumber > 0){
       //    results = results * lastPageNumber;
       //}
       //return this.mangasPage(json, hasNextPage, nextPage, results);
@@ -707,6 +707,7 @@ module.exports = class Readcomiconline extends Source {
       mangasPage.results = results;
       return mangasPage;
     } else {
+      var json = [];
       $(searchMangaSelector).each(function (i, elem) {
         json.push(new Readcomiconline().searchMangaFromElement($(this)));
       });

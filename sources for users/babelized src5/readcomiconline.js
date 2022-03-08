@@ -672,9 +672,14 @@ module.exports = class Readcomiconline extends Source {
     var searchMangaSelector = this.searchMangaSelector();
     console.log("readcomiconline searchMangaResponse -- ", response);
     var $ = cheerio.load(response);
-    var directManga = $('.barTitle', $('.rightBox')).first().text().trim(); //checks if the comic was redirected and then makes one page mangapage
+    var directManga = $('.barTitle', $('.rightBox'));
 
-    if (`${directManga}` === 'Cover') {
+    if (directManga != null) {
+      directManga = directManga.first().text().trim();
+    } //checks if the comic was redirected and then makes one page mangapage
+
+
+    if (directManga.toLowerCase() == 'cover') {
       let name = $('.bigChar', $('.bigBarContainer').first()).text().trim();
       let url = $('.bigChar').attr('href');
       var thumbnail_url = $('img', $('.rightBox')).attr('src');

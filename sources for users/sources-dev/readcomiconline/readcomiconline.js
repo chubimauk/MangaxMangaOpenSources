@@ -628,7 +628,7 @@ module.exports = class Readcomiconline extends Source  {
         directManga = directManga.first().text().trim();
         }
         //checks if the comic was redirected and then makes one page mangapage
-        if ( directManga.toLowerCase() == 'cover'){
+        if ( `${directManga}`.toLowerCase() == 'cover'){
             let name = $('.bigChar', $('.bigBarContainer').first()).text().trim()
             let url = $('.bigChar').attr('href')            
             var thumbnail_url = $('img', $('.rightBox')).attr('src')

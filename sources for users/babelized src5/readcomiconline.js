@@ -670,31 +670,72 @@ module.exports = class Readcomiconline extends Source {
     var page = parseInt(page); //protect WKNodeBrowserify
 
     var searchMangaSelector = this.searchMangaSelector();
-    var json = [];
     console.log("readcomiconline searchMangaResponse -- ", response);
     var $ = cheerio.load(response);
-    $(searchMangaSelector).each(function (i, elem) {
-      json.push(new Readcomiconline().searchMangaFromElement($(this)));
-    });
-    var page = parseInt(page); //important for nextPage = page + 1
-    //console.log("finished parse json - ", json);
-    //var lastPageNumber = this.getLastPageNumberForSearch(response); //this should work on every page for this source
-    // console.log("lastPageNumber - ",lastPageNumber);
+    var directManga = $('.barTitle', $('.rightBox'));
 
-    var mangasPage = {};
-    mangasPage.mangas = json;
-    mangasPage.hasNextPage = false; //lastPageNumber > page; //search not paged for readcomiconline
+    if (directManga != null) {
+      directManga = directManga.first().text().trim();
+    } //checks if the comic was redirected and then makes one page mangapage
 
-    mangasPage.nextPage = page + 1; //this doesn't matter if hasNextPage is false
 
-    console.log("mangasPage -- ", mangasPage);
-    var results = json.length; //if (lastPageNumber != null && lastPageNumber > 0){
-    //    results = results * lastPageNumber;
-    //}
-    //return this.mangasPage(json, hasNextPage, nextPage, results);
+    if (`${directManga}`.toLowerCase() == 'cover') {
+      let name = $('.bigChar', $('.bigBarContainer').first()).text().trim();
+      let url = $('.bigChar').attr('href');
+      var thumbnail_url = $('img', $('.rightBox')).attr('src');
+      var directed = [];
+      var thumbnail = thumbnail_url;
 
-    mangasPage.results = results;
-    return mangasPage; //console.log(searchPageHtml);
+      if (!thumbnail_url.includes("https")) {
+        thumbnail = `${this.baseUrl}${thumbnail_url}`;
+      }
+
+      var rank = '0';
+      directed.push({
+        name,
+        url,
+        thumbnail,
+        rank
+      });
+      var mangasPage = {};
+      mangasPage.mangas = directed;
+      mangasPage.hasNextPage = false; //lastPageNumber > page; //search not paged for readcomiconline
+
+      mangasPage.nextPage = page + 1; //this doesn't matter if hasNextPage is false
+
+      console.log("mangasPage -- ", mangasPage);
+      var results = directed.length; //if (lastPageNumber != null && lastPageNumber > 0){
+      //    results = results * lastPageNumber;
+      //}
+      //return this.mangasPage(json, hasNextPage, nextPage, results);
+
+      mangasPage.results = results;
+      return mangasPage;
+    } else {
+      var json = [];
+      $(searchMangaSelector).each(function (i, elem) {
+        json.push(new Readcomiconline().searchMangaFromElement($(this)));
+      });
+      var page = parseInt(page); //important for nextPage = page + 1
+      //console.log("finished parse json - ", json);
+      //var lastPageNumber = this.getLastPageNumberForSearch(response); //this should work on every page for this source
+      // console.log("lastPageNumber - ",lastPageNumber);
+
+      var mangasPage = {};
+      mangasPage.mangas = json;
+      mangasPage.hasNextPage = false; //lastPageNumber > page; //search not paged for readcomiconline
+
+      mangasPage.nextPage = page + 1; //this doesn't matter if hasNextPage is false
+
+      console.log("mangasPage -- ", mangasPage);
+      var results = json.length; //if (lastPageNumber != null && lastPageNumber > 0){
+      //    results = results * lastPageNumber;
+      //}
+      //return this.mangasPage(json, hasNextPage, nextPage, results);
+
+      mangasPage.results = results;
+      return mangasPage; //console.log(searchPageHtml);
+    }
   } //readcomiconline
 
 

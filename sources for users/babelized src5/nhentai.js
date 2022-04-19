@@ -171,16 +171,14 @@ module.exports = class Nhentai extends Source {
 
   pageListParse(pageListResponse, chapter) {
     var $ = cheerio.load(pageListResponse);
+    var script = $("script:contains(media_server)").first().text();
+    var media_serve = RegExp(/media_server\s*:\s*(\d+)/gi);
+    var media_server = media_serve.exec(script);
     var thisReference = this;
     var pages = [];
     $(this.pageListSelector()).each(function (i, pageElement) {
-      var url = $(pageElement).attr('data-src').replace("t.nh", "i.nh").replace("t.", ".");
+      var url = $(pageElement).attr('data-src').replace("t.nh", "i.nh").replace(/t\d+.nh/gi, `i${media_server[1]}.nh`).replace("t.", ".") || $(pageElement).attr('src').replace("t.nh", "i.nh").replace(/t\d+.nh/gi, `i${media_server[1]}.nh`).replace("t.", ".");
       var headers = {};
-
-      if (typeof thumbnai === undefined) {
-        thumbnai = $(pageElement).attr('src').replace("t.nh", "i.nh").replace("t.", ".");
-      }
-
       headers['Referer'] = thisReference.pageListRequest(chapter);
       headers['Content-Type'] = 'image/jpeg';
       pages.push(thisReference.jsonBrowserifyRequest(url, null, null, headers, null));

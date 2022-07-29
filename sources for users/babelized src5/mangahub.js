@@ -10,6 +10,7 @@ module.exports = class Mangahub extends Source {
   constructor() {
     super();
     this.baseUrl = 'https://mangahub.io';
+    this.mangahub_cdn = 'https://img.mghubcdn.com/file/imghub/';
   }
 
   searchMangaSelector() {
@@ -183,9 +184,40 @@ module.exports = class Mangahub extends Source {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        "query": `{chapter(x:m01,slug:\"${slug}\",number:${number}){id,title,mangaID,number,slug,date,pages,noAd,manga{id,title,slug,mainSlug,author,isWebtoon,isYaoi,isPorn,isSoftPorn,unauthFile,isLicensed}}}`
+        "query": `query {
+                    chapter(x: m01, slug: "${slug}", number: ${Number(number)}) {
+                      pages
+                      title
+                      slug
+                    }
+                  }`
       })
     };
+    return options;
+  }
+
+  getRequestWithHeaders() {
+    var userAgent = '';
+    var cookie = '';
+
+    if (this.cfheaders != null) {
+      if (this.cfheaders['User-Agent'] != null) {
+        userAgent = this.cfheaders['User-Agent'];
+      }
+
+      if (this.cfheaders['Cookie'] != null) {
+        cookie = this.cfheaders['Cookie'];
+      }
+    }
+
+    var options = {
+      'headers': {
+        'Referer': this.baseUrl,
+        'User-Agent': userAgent,
+        'Cookie': cookie
+      }
+    };
+    console.log(`Options are ${JSON.stringify(options)}`);
     return options;
   }
 
@@ -196,13 +228,13 @@ module.exports = class Mangahub extends Source {
 
   pageListParse(pageListResponse, chapter) {
     const obj = JSON.parse(pageListResponse);
-    const cdn = "https://img.mghubcdn.com/file/imghub/";
     const pages = [];
     const data = JSON.parse(obj.data.chapter.pages);
+    console.log(pageListResponse);
 
     for (const vals in data) {
-      const url = cdn + data[vals];
-      pages.push(this.jsonBrowserifyRequest(url, null, null, null, null));
+      const url = this.mangahub_cdn + data[vals];
+      pages.push(this.jsonBrowserifyRequest(url.trim(), null, null, this.getRequestWithHeaders().headers, null));
     }
 
     console.log('Mangahub pages', pages);
@@ -284,8 +316,8 @@ module.exports = class Mangahub extends Source {
   fetchSourceInfo() {
     var sourceInfo = {};
     sourceInfo.requiresLogin = false;
-    sourceInfo.url = this.baseUrl;
-    sourceInfo.isCloudFlareSite = false;
+    sourceInfo.url = "https://img.mghubcdn.com/file/imghub/martial-peak/2455/1.jpg";
+    sourceInfo.isCloudFlareSite = true;
     var filters = [];
     var sortFilter = {};
     sortFilter.paramKey = 'sort';

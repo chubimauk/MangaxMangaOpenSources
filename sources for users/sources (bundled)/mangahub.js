@@ -825,6 +825,19 @@ module.exports = class Mangahub extends Source {
   }
 
   pageListRequest(chapter) {
+    var userAgent = '';
+    var cookie = '';
+
+    if (this.cfheaders != null) {
+      if (this.cfheaders['User-Agent'] != null) {
+        userAgent = this.cfheaders['User-Agent'];
+      }
+
+      if (this.cfheaders['Cookie'] != null) {
+        cookie = this.cfheaders['Cookie'];
+      }
+    }
+
     var url = chapter.chapter;
     var slu = super.substringAfterFirst('chapter/', url);
     var slug = super.substringBeforeFirst('/', slu);
@@ -833,16 +846,13 @@ module.exports = class Mangahub extends Source {
       'method': 'POST',
       'url': 'https://api.mghubcdn.com/graphql',
       'headers': {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Referer': this.baseUrl,
+        'User-Agent': userAgent,
+        'Cookie': cookie
       },
       body: JSON.stringify({
-        "query": `query {
-                    chapter(x: m01, slug: "${slug}", number: ${Number(number)}) {
-                      pages
-                      title
-                      slug
-                    }
-                  }`
+        "query": `{chapter(x:m01,slug:\"${slug}\",number:${number}){id,title,mangaID,number,slug,date,pages,noAd,manga{id,title,slug,mainSlug,author,isWebtoon,isYaoi,isPorn,isSoftPorn,unauthFile,isLicensed}}}`
       })
     };
     return options;

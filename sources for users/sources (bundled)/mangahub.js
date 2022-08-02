@@ -849,7 +849,8 @@ module.exports = class Mangahub extends Source {
         'Content-Type': 'application/json',
         'Referer': this.baseUrl,
         'User-Agent': userAgent,
-        'Cookie': cookie
+        'Cookie': cookie,
+        'origin': `${this.baseUrl}/`
       },
       body: JSON.stringify({
         "query": `{chapter(x:m01,slug:\"${slug}\",number:${number}){id,title,mangaID,number,slug,date,pages,noAd,manga{id,title,slug,mainSlug,author,isWebtoon,isYaoi,isPorn,isSoftPorn,unauthFile,isLicensed}}}`
@@ -876,7 +877,8 @@ module.exports = class Mangahub extends Source {
       'headers': {
         'Referer': this.baseUrl,
         'User-Agent': userAgent,
-        'Cookie': cookie
+        'Cookie': cookie,
+        'origin': `${this.baseUrl}/`
       }
     };
     console.log(`Options are ${JSON.stringify(options)}`);

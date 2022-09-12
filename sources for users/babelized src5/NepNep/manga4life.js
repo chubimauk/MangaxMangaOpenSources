@@ -44,15 +44,27 @@ module.exports = class Manga4life extends Source {
     }
 
     chapterListRequest(seriesURL) {
-        return this.getRequestWithHeaders(this.baseUrl + seriesURL);
+        if (seriesURL.startsWith('http')) {
+            return this.getRequestWithHeaders(seriesURL);
+        } else {
+            return this.getRequestWithHeaders(super.chapterListRequest(seriesURL));
+        }
     }
 
     mangaDetailsRequest(seriesURL) {
-        return this.getRequestWithHeaders(this.baseUrl + seriesURL);
+        if (seriesURL.startsWith('http')) {
+            return this.getRequestWithHeaders(seriesURL);
+        } else {
+            return this.getRequestWithHeaders(super.mangaDetailsRequest(seriesURL));
+        }
     }
 
     pageListRequest(chapter) {
-        return this.getRequestWithHeaders(`${this.baseUrl}/read-online/${chapter.chapter}`);
+        if (chapter.chapter.startsWith('http')) {
+            return this.getRequestWithHeaders(chapter.chapter);
+        } else {
+            return this.getRequestWithHeaders(super.pageListRequest(chapter));
+        }
     }
 
     chapterListParse(response, $, seriesURL) {
@@ -77,7 +89,7 @@ module.exports = class Manga4life extends Source {
 
             chapters.push({
                 title: name,
-                url: id,
+                url: `/read-online/${id}`,
                 volume,
                 number: chapNum,
                 language: 'English',
@@ -103,7 +115,7 @@ module.exports = class Manga4life extends Source {
         console.log('mangaDetailsParse loaded into cheerio');
         const info = $('.row');
         const entity = parsedJson.mainEntity;
-        const thumbnail = `${imgSource}/${seriesURL}.jpg`;
+        const thumbnail = `${imgSource}/${seriesURL.replace(/\/manga\//, '')}.jpg`;
         const title = this.decodeHTMLEntity($('h1', info).first().text());
         const author = this.decodeHTMLEntity(entity.author[0]);
         const artist = '';

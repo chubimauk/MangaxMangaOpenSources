@@ -10,6 +10,7 @@ module.exports = class Mangahub extends Source {
   constructor() {
     super();
     this.baseUrl = 'https://mangahub.io';
+    this.mangahub_cdn = 'https://img.mghubcdn.com/file/imghub/';
   }
 
   searchMangaSelector() {
@@ -172,6 +173,19 @@ module.exports = class Mangahub extends Source {
   }
 
   pageListRequest(chapter) {
+    var userAgent = '';
+    var cookie = '';
+
+    if (this.cfheaders != null) {
+      if (this.cfheaders['User-Agent'] != null) {
+        userAgent = this.cfheaders['User-Agent'];
+      }
+
+      if (this.cfheaders['Cookie'] != null) {
+        cookie = this.cfheaders['Cookie'];
+      }
+    }
+
     var url = chapter.chapter;
     var slu = super.substringAfterFirst('chapter/', url);
     var slug = super.substringBeforeFirst('/', slu);
@@ -180,12 +194,42 @@ module.exports = class Mangahub extends Source {
       'method': 'POST',
       'url': 'https://api.mghubcdn.com/graphql',
       'headers': {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Referer': this.baseUrl,
+        'User-Agent': userAgent,
+        'Cookie': cookie,
+        'origin': `${this.baseUrl}/`
       },
       body: JSON.stringify({
         "query": `{chapter(x:m01,slug:\"${slug}\",number:${number}){id,title,mangaID,number,slug,date,pages,noAd,manga{id,title,slug,mainSlug,author,isWebtoon,isYaoi,isPorn,isSoftPorn,unauthFile,isLicensed}}}`
       })
     };
+    return options;
+  }
+
+  getRequestWithHeaders() {
+    var userAgent = '';
+    var cookie = '';
+
+    if (this.cfheaders != null) {
+      if (this.cfheaders['User-Agent'] != null) {
+        userAgent = this.cfheaders['User-Agent'];
+      }
+
+      if (this.cfheaders['Cookie'] != null) {
+        cookie = this.cfheaders['Cookie'];
+      }
+    }
+
+    var options = {
+      'headers': {
+        'Referer': this.baseUrl,
+        'User-Agent': userAgent,
+        'Cookie': cookie,
+        'origin': `${this.baseUrl}/`
+      }
+    };
+    console.log(`Options are ${JSON.stringify(options)}`);
     return options;
   }
 
@@ -196,13 +240,13 @@ module.exports = class Mangahub extends Source {
 
   pageListParse(pageListResponse, chapter) {
     const obj = JSON.parse(pageListResponse);
-    const cdn = "https://img.mghubcdn.com/file/imghub/";
     const pages = [];
     const data = JSON.parse(obj.data.chapter.pages);
+    console.log(pageListResponse);
 
     for (const vals in data) {
-      const url = cdn + data[vals];
-      pages.push(this.jsonBrowserifyRequest(url, null, null, null, null));
+      const url = this.mangahub_cdn + data[vals];
+      pages.push(this.jsonBrowserifyRequest(url.trim(), null, null, this.getRequestWithHeaders().headers, null));
     }
 
     console.log('Mangahub pages', pages);
@@ -284,8 +328,8 @@ module.exports = class Mangahub extends Source {
   fetchSourceInfo() {
     var sourceInfo = {};
     sourceInfo.requiresLogin = false;
-    sourceInfo.url = this.baseUrl;
-    sourceInfo.isCloudFlareSite = false;
+    sourceInfo.url = "https://img.mghubcdn.com/file/imghub/martial-peak/2455/1.jpg";
+    sourceInfo.isCloudFlareSite = true;
     var filters = [];
     var sortFilter = {};
     sortFilter.paramKey = 'sort';

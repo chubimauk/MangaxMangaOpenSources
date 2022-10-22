@@ -11,10 +11,10 @@ const regex = {
     'directory_image_host': /<img ng-src="(.*)\//
 }
 
-module.exports = class Mangasee extends Source {
+module.exports = class Manga4life extends Source {
     constructor () {
         super()
-        this.baseUrl = 'https://mangasee123.com'
+        this.baseUrl = 'https://manga4life.com'
     }
 
     getDirectory(data) {
@@ -223,7 +223,7 @@ module.exports = class Mangasee extends Source {
             })
         }
         
-        console.log('mangasee latest -- ', json)
+        console.log('manga4life latest -- ', json)
         
         let mangasPage = {}
         mangasPage.mangas = json
@@ -432,7 +432,7 @@ module.exports = class Mangasee extends Source {
             'displayName':'Official Translation',
             'type':'choice',
             'options':{
-                'no':'Any',
+                'Any':'Any',
                 'yes':'Official Translation Only'
             }
         }
@@ -482,11 +482,10 @@ module.exports = class Mangasee extends Source {
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag('content',['Manga','Manhwa','Manhua','Doujinshi','OEL'],null))
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag('contributor',['xOnlyFadi'],null))
         sourceInfo.displayInfo.push(super.jsonSourceDisplayInfoTag('tracker',['No'],[]))
-
-        console.log('Mangasee sourceInfo -- ', sourceInfo)
+        
+        console.log('manga4life sourceInfo -- ', sourceInfo)
         return sourceInfo
     }
-
 
     getGenresList(){
         return {

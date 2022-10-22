@@ -98,7 +98,7 @@ module.exports = class Manga4life extends Source {
                 number: chapNum,
                 language: 'English',
                 date_upload: '',
-                scanlator: ''
+                scanlator: null
             })
         }
 

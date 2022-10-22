@@ -5,8 +5,8 @@
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "babelize" : "npx babel src --out-dir src5",
-    "bundle" : "browserify main.js --standalone myBundle > browserTest/bundle.js"
+    "babelize": "npx babel src --out-dir src5",
+    "bundle": "npx browserify src5/main.js --standalone myBundle > browserTest/bundle.js"
   },
   "author": "chubimauk",
   "license": "ISC",
@@ -14,8 +14,10 @@
     "@babel/plugin-transform-runtime": "^7.10.4",
     "@babel/runtime": "^7.10.4",
     "cheerio": "^1.0.0-rc.3",
+    "entities": "^4.4.0",
     "request": "^2.88.2",
-    "request-promise": "^4.2.5"
+    "request-promise": "^4.2.5",
+    "sequency": "^0.20.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.10.4",

@@ -8,7 +8,7 @@ module.exports = class AsuraScans extends Source  {
 
     constructor() {
         super();
-        this.baseUrl = 'https://www.asurascans.com';
+        this.baseUrl = 'https://asura.gg';
     }
 
     getRequestWithHeaders(url) {
@@ -32,7 +32,7 @@ module.exports = class AsuraScans extends Source  {
     
     mangaFromElement(element){
         var coverElement = element.find('a').first();
-        var url = super.substringAfterFirst('.com', 'https:' + coverElement.attr('href'));
+        var url = super.substringAfterFirst('.gg', 'https:' + coverElement.attr('href'));
         var name = coverElement.attr('title')
         var thumbnai = element.find('div.limit img').first().attr('src');
         var rank = '0';
@@ -224,7 +224,7 @@ module.exports = class AsuraScans extends Source  {
             var gen = $(chapterElement).text();
             genres.push(gen);
         });
-        let description = $('div.desc p, div.entry-content p, div[itemprop="description"]',infoEle).text().trim();
+        let description = $('div[itemprop="description"]',infoEle).text().trim();
         console.log('finishedMangaDetails parse');
         return this.mangaDetails(title, thumbnail, description, author, artist, status, genres);
     }

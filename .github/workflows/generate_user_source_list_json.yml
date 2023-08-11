@@ -1,0 +1,32 @@
+name: Update User Source List JSON file
+
+on:
+  push:
+    paths:
+      - 'sources for users/sources (bundled)/*.js'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Create and update User Source List JSON file
+      run: |
+        cd 'sources for users/sources (bundled)'
+        echo '[' > user_source_list.json
+        for file in *.js; do
+          echo "{ \"name\": \"$file\", \"lastModified\": \"$(git log -1 --pretty="format:%ci" $file)\" }," >> user_source_list.json
+        done
+        sed -i '$ s/.$//' user_source_list.json
+        echo ']' >> user_source_list.json
+
+    - name: Commit and push
+      run: |
+        git config --global user.email "action@github.com"
+        git config --global user.name "GitHub Action"
+        git add 'sources for users/sources (bundled)/user_source_list.json'
+        git commit -m "Update user_source_list.json with source file names and last modified dates"
+        git push

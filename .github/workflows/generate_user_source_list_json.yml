@@ -16,12 +16,14 @@ jobs:
     - name: Create and update User Source List JSON file
       run: |
         cd 'sources for users/sources (bundled)'
-        echo '[' > user_source_list.json
+        baseURL="https://github.com/chubimauk/MangaxMangaOpenSources/blob/main/sources%20for%20users/sources%20(bundled)"
+        sourceListName="MxM Source Repo"
+        echo "{ \"baseURL\": \"$baseURL\", \"sourceListName\": \"$sourceListName\", \"sources\": [" > user_source_list.json
         for file in *.js; do
           echo "{ \"name\": \"$file\", \"lastModified\": \"$(git log -1 --pretty="format:%ci" $file)\" }," >> user_source_list.json
         done
         sed -i '$ s/.$//' user_source_list.json
-        echo ']' >> user_source_list.json
+        echo ']}' >> user_source_list.json
 
     - name: Commit and push
       run: |

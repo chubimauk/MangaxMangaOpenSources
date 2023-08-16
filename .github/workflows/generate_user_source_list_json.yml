@@ -16,7 +16,7 @@ jobs:
     - name: Create and update User Source List JSON file
       run: |
         cd 'sources for users/sources (bundled)'
-        baseURL="https://github.com/chubimauk/MangaxMangaOpenSources/blob/main/sources%20for%20users/sources%20(bundled)"
+        baseURL="https://raw.githubusercontent.com/chubimauk/MangaxMangaOpenSources/main/sources%20for%20users/sources%20(bundled)"
         sourceListName="MxM Source Repo"
         echo "{ \"baseURL\": \"$baseURL\", \"sourceListName\": \"$sourceListName\", \"sources\": [" > user_source_list.json
         for file in *.js; do

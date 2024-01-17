@@ -11,13 +11,13 @@ module.exports = class Manganelo extends Source  {
     constructor() {
         super(); //super must be called first otherwise variables are "used before declaration"
         //The manga provider to download the pages from
-        this.baseUrl = 'https://readmanganato.com';//'https://manganelo.com'; //manganato now..
+        this.baseUrl = 'https://m.manganelo.com/';//'https://manganelo.com'; //manganato now..
         
         //unique to Manganelo
         this.latestUrlPath = '/genre-all/';
         
         this.simpleQueryPath = 'search/story/';
-        this.baseChapterUrl = 'https://chapmanganato.com';
+        this.baseChapterUrl = 'https://chapmanganelo.com/'; //'https://chapmanganato.com';
     }
     
     searchMangaSelector() {
@@ -71,15 +71,7 @@ module.exports = class Manganelo extends Source  {
     }
     
     popularMangaRequest(page /*Int*/) {
-        //genre-all?type=topview
-        //https://manganato.com/genre-all/2?type=topview
-        if(page == 1){
-            return this.baseUrl + `/genre-all?type=topview`; //headers?
-        }
-        else {
-            return this.baseUrl + `/genre-all/${page}?type=topview`; //headers?
-
-        }
+        return this.baseUrl + `/genre-all/${page}?type=topview`; //headers?
     }
     
     popularMangaSelector() {
@@ -458,7 +450,7 @@ module.exports = class Manganelo extends Source  {
             return chapter.chapter; //headers?
         }
         else {
-            return super.pageListRequest(chapter);
+            return this.baseChapterUrl + chapter.chapter; //return super.pageListRequest(chapter); <-- uses baseURL
         }
     }
     

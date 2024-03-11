@@ -2,7 +2,7 @@
 Sources Set Up For Manga x Manga
 **FOR NON-DEVELOPERS**
 *Source Lists*
-1. on your device where the app is installed, tap this link: mangaxmanga://import-user-source-list?url=https://raw.githubusercontent.com/chubimauk/MangaxMangaOpenSources/main/sources%20for%20users/sources%20(bundled)/user_source_list.json
+1. on your device where the app is installed, tap this link: [MXM Source List Install](mangaxmanga://import-user-source-list?url=https://raw.githubusercontent.com/chubimauk/MangaxMangaOpenSources/main/sources%20for%20users/sources%20(bundled)/user_source_list.json)
 
 *If you simply want to have all the current official sources follow these instructions*
 1. download this file: https://github.com/chubimauk/encryptedMXMFiles/blob/master/ebundle.txt
